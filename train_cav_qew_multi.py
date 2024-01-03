@@ -19,7 +19,7 @@ parser.add_argument("--algo", type=str, default = 'ppo', help = 'algorithm to ad
 parser.add_argument('--train', type=bool, default=True, help="(default: True)")
 parser.add_argument('--render', type=bool, default=False, help="(default: False)")
 parser.add_argument('--manual', type=bool, default=False, help="(default: False)")
-parser.add_argument('--horizon', type=int, default=1800, help='number of simulation steps, (default: 6000)')
+parser.add_argument('--horizon', type=int, default=180000, help='number of simulation steps, (default: 6000)')
 parser.add_argument('--coop', type=float, default=0, help='cooperative factor for human vehicles')
 parser.add_argument('--epochs', type=int, default=1, help='number of epochs, (default: 1000)')
 parser.add_argument('--tensorboard', type=bool, default=False, help='use_tensorboard, (default: False)')
@@ -73,7 +73,7 @@ total_travel_time=0
 densities = []
 data=[]
 
-t= 0
+t=1
 
 while t < simdur:
     print('step', t)
@@ -137,11 +137,11 @@ while t < simdur:
 
     
     # # # # Save the average values
-    # np.save(f'results/9728/Main3300_merge1250average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows)
-    # np.save(f'results/9813/Main3300_merge1250average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9813)
-    # np.save(f'results/9832/Main3300_merge1250average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9832)
-    # np.save(f'results/9575/Main3300_merge1250average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9575)
-    # np.save(f'results/Main3300_merge1250average_density2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', densities)
+    np.save(f'results/9728/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows)
+    np.save(f'results/9813/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9813)
+    np.save(f'results/9832/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9832)
+    np.save(f'results/9575/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9575)
+    np.save(f'results/Main{mainlane_demand}_merge{merge_lane_demand}average_density2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', densities)
 print('total travel time (h):',total_travel_time)
 print('average bottleneck speed:',np.mean(avg_speeds))
 print('average emission: ','CO:',np.mean(cos),'HC:',np.mean(hcs),'NOX:',np.mean(noxs),'PMX:',np.mean(pmxs))

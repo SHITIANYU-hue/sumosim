@@ -500,55 +500,56 @@ class sumo_qew_env_merge():
 		'''
 		done=False
 
-		for i in range(len(veh_id_list)):
-			try:
-				self.compute_action(action[veh_id_list[i]],veh_id_list[i],max_dec=max_dec,max_acc=max_acc,stop_and_go=stop_and_go,sumo_lc=sumo_lc,sumo_carfollow=sumo_carfollow,lane_change=lane_change,car_follow=car_follow)
-			except:
-				done=True 
-				break
+		# for i in range(len(veh_id_list)):
+		# 	try:
+		# 		self.compute_action(action[veh_id_list[i]],veh_id_list[i],max_dec=max_dec,max_acc=max_acc,stop_and_go=stop_and_go,sumo_lc=sumo_lc,sumo_carfollow=sumo_carfollow,lane_change=lane_change,car_follow=car_follow)
+		# 	except:
+		# 		done=True 
+		# 		break
 		# Sim step
 		traci.simulationStep()
 		collision=False
 		# action[0]=map_to_minus_zero_plus(action[0])
 		# Check collision
-		for i in range(len(veh_id_list)):
-			collision_i = self.detect_collision(veh_id_list[i])
-			if collision_i:
-				print('collision',collision_i,'name',veh_id_list[i])
-				collision=True
-				break
-			else:
-				collision=False
+		# for i in range(len(veh_id_list)):
+		# 	collision_i = self.detect_collision(veh_id_list[i])
+		# 	if collision_i:
+		# 		print('collision',collision_i,'name',veh_id_list[i])
+		# 		collision=True
+		# 		break
+		# 	else:
+		# 		collision=False
 		# Compute Reward
 		reward=0
-		for i in range(len(veh_id_list)):
-			try:
-				reward_i = self.compute_reward(collision, action[veh_id_list[i]],veh_id_list[i])
-				reward+=reward_i[0]
-			except:
-				done=True
-				break
+		# for i in range(len(veh_id_list)):
+		# 	try:
+		# 		reward_i = self.compute_reward(collision, action[veh_id_list[i]],veh_id_list[i])
+		# 		reward+=reward_i[0]
+		# 	except:
+		# 		done=True
+		# 		break
 		# Update agent params 
-		if not collision and not done:
-			for i in range(len(veh_id_list)):
-				self.update_params(veh_id_list[i])
+		# if not collision and not done:
+		# 	for i in range(len(veh_id_list)):
+		# 		self.update_params(veh_id_list[i])
 		# State
-		for i in range(len(veh_id_list)):
-			try:
-				next_state = self.get_state(veh_id_list[i])
-				self.rl_vehicles_state[veh_id_list[i]]=next_state
-			except:
-				done=True
-				break
+		next_state=[]
+		# for i in range(len(veh_id_list)):
+		# 	try:
+		# 		next_state = self.get_state(veh_id_list[i])
+		# 		self.rl_vehicles_state[veh_id_list[i]]=next_state
+		# 	except:
+		# 		done=True
+		# 		break
 		# Update curr state
 		self.curr_step += 1
-		next_state=self.rl_vehicles_state
+		# next_state=self.rl_vehicles_state
 		# Return
-		if self.curr_step <= self.max_steps:
-			done = collision
-		else:
-			done = True
-			self.curr_step = 0
+		# if self.curr_step <= self.max_steps:
+		# 	done = collision
+		# else:
+		# 	done = True
+		# 	self.curr_step = 0
 
 		return next_state, reward, done, collision
 		
