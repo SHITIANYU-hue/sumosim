@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on Thu 04 Jan 2024 10:01:48 AM by Eclipse SUMO netedit Version v1_8_0+1878-9c33583f10
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="Omar_VSL_Shifted_Demand.net.xml"/>
+    </input>
+
+    <output>
+        <output-file value="Omar_VSL_Shifted_Demand.net.xml"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="false"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="0"/>
+        <junctions.limit-turn-speed value="-1"/>
+        <rectangular-lane-cut value="false"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="false"/>
+    </pedestrian>
+
+    <netedit>
+        <route-files value="/home/ilia/Programming/sow45_code/wolf/networks/sumo/single_ramp_hypothetical_network/Omar_VSL_Shifted_Demand.rou.xml"/>
+    </netedit>
+
+    <report>
+        <aggregate-warnings value="5"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <route edges="328 319 246 276 250" color="yellow" id="route_0"/>
+    <route edges="1249 994 248 276 250" color="yellow" id="route_1"/>
+    <flow id="flow_0" begin="0.00" route="route_0" end="3600.00" number="1800"/>
+    <flow id="flow_1" begin="0.00" route="route_0" end="3600.00" number="1800"/>
+    <flow id="flow_2" begin="0.00" route="route_0" end="3600.00" number="1800"/>
+    <flow id="flow_3" begin="0.00" route="route_1" end="3600.00" number="1800"/>
+</routes>
