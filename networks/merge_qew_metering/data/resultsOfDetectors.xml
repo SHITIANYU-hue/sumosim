@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2024-01-04 23:43:30 by Eclipse SUMO GUI Version v1_16_0+1958-0ab20a374a1
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="/home/tianyu/code/uoftexp/sumosim/networks/merge_qew_metering/qew_mississauga_rd.net.xml"/>
+        <route-files value="/home/tianyu/code/uoftexp/sumosim/networks/merge_qew_metering/qew_mississauga_rd.rou.xml"/>
+        <additional-files value="/home/tianyu/code/uoftexp/sumosim/networks/merge_qew_metering/ns.det.xml"/>
+    </input>
+
+    <time>
+        <begin value="0"/>
+        <end value="10000"/>
+        <step-length value="0.1"/>
+    </time>
+
+</configuration>
+-->
+
+<detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e1_file.xsd">
+</detector>

@@ -1,0 +1,29 @@
+<additional>
+	<inductionLoop id='9728_0loop' lane='9728_0' pos='800' period='200' file='data/resultsOfDetectors.xml'/> 
+	<inductionLoop id='9728_1loop' lane='9728_1' pos='800' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9728_2loop' lane='9728_2' pos='800' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9832_0loop' lane='9832_0' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9832_1loop' lane='9832_1' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9832_2loop' lane='9832_2' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	
+	<inductionLoop id='9712_0loop' lane='9712_0' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_1loop' lane='9712_1' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_2loop' lane='9712_2' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_3loop' lane='9712_3' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+
+	<inductionLoop id='9712_4loop' lane='9712_0' pos='100' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_5loop' lane='9712_1' pos='100' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_6loop' lane='9712_2' pos='100' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_7loop' lane='9712_3' pos='100' period='200' file='data/resultsOfDetectors.xml'/>
+
+	<inductionLoop id='9712_8loop' lane='9712_0' pos='200' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_9loop' lane='9712_1' pos='200' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_10loop' lane='9712_2' pos='200' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9712_11loop' lane='9712_3' pos='200' period='200' file='data/resultsOfDetectors.xml'/>
+
+	<inductionLoop id='9575_0loop' lane='9575_0' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9575_1loop' lane='9575_1' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9575_2loop' lane='9575_2' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='9813_0loop' lane='9813_0' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+</additional>
+
