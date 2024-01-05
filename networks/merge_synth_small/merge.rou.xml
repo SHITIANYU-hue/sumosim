@@ -41,8 +41,8 @@
 -->
 
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    <route edges="328 319 246 276 250" color="yellow" id="route_0"/>
-    <route edges="1249 994 248 276 250" color="yellow" id="route_1"/>
+    <route edges="319 246 276 250" color="yellow" id="route_0"/>
+    <route edges="994 248 276 250" color="yellow" id="route_1"/>
     <vType id="human" accel="0.8" decel="4.5" sigma="0.5" length="5" carFollowModel="IDM" maxSpeed="30" speedFactor="1" speedDev="0.3" lcCooperative="1" lcStrategic="1" minGap="2" tau="1.2" laneChangeModel="SL2015" guiShape='passenger/wagon' color='0,1,0'/> 
     <vType id="rl" accel="0.8" decel="4.5" sigma="0.5" length="5" maxSpeed="50"  carFollowModel="IDM" minGap="2" laneChangeModel="SL2015"  guiShape='passenger/van' color="1,0,0"/>
 </routes>

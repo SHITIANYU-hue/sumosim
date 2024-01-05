@@ -6,7 +6,7 @@ from collections import deque
 from agents.controller import IDMController,GippsController
 import os
 from utils.utils import *
-from envs.qew_merge_add_veh import qew_merge_add_veh
+from envs.merge_add_veh import qew_merge_add_veh
 
 class sumo_qew_env_merge():
 	def __init__(self,mainlane_demand,merge_lane_demand):

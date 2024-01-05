@@ -1,0 +1,33 @@
+<additional>
+	<inductionLoop id='250_0loop' lane='250_0' pos='80' period='200' file='data/resultsOfDetectors.xml'/> 
+	<inductionLoop id='250_1loop' lane='250_1' pos='80' period='200' file='data/resultsOfDetectors.xml'/>
+
+	<inductionLoop id='276_0loop' lane='276_0' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='276_1loop' lane='276_1' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='276_2loop' lane='276_2' pos='10' period='200' file='data/resultsOfDetectors.xml'/>
+	
+	<inductionLoop id='276_3loop' lane='276_0' pos='60' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='276_4loop' lane='276_1' pos='60' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='276_5loop' lane='276_2' pos='60' period='200' file='data/resultsOfDetectors.xml'/>
+
+	<inductionLoop id='276_6loop' lane='276_0' pos='150' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='276_7loop' lane='276_1' pos='150' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='276_8loop' lane='276_2' pos='150' period='200' file='data/resultsOfDetectors.xml'/>
+
+	<inductionLoop id='246_0loop' lane='246_0' pos='20' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='246_1loop' lane='246_1' pos='20' period='200' file='data/resultsOfDetectors.xml'/>
+
+
+	<inductionLoop id='319_0loop' lane='319_0' pos='20' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='319_1loop' lane='319_1' pos='20' period='200' file='data/resultsOfDetectors.xml'/>
+
+
+	<inductionLoop id='328_0loop' lane='328_0' pos='20' period='200' file='data/resultsOfDetectors.xml'/>
+	<inductionLoop id='328_1loop' lane='328_1' pos='20' period='200' file='data/resultsOfDetectors.xml'/>
+
+	<inductionLoop id='994_0loop' lane='994_0' pos='20' period='200' file='data/resultsOfDetectors.xml'/>
+
+	<inductionLoop id='248_0loop' lane='248_0' pos='20' period='200' file='data/resultsOfDetectors.xml'/>
+
+</additional>
+

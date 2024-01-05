@@ -5,7 +5,7 @@ import numpy as np
 import os
 import random
 from envs.sumo_cav_qew_env_merge import sumo_qew_env_merge
-from envs.qew_merge_add_veh import qew_merge_add_veh
+from envs.merge_add_veh import qew_merge_add_veh
 import json
 
 from utils.utils import *
@@ -102,7 +102,7 @@ while t < simdur:
         curflow_9575 = curflow_9575 + calc_outflow(outID_9575)
         avg_speed=(get_meanspeed('9712_1')+get_meanspeed('9712_2')+get_meanspeed('9712_3')+get_meanspeed('9712_0'))/4 ### this is only bottlneck's speed
 
-        co,hc,nox,pmx,all_avg_speed=calc_emission_speed() ## i consider to calculate all edges emission and avg speed (for whole network)
+        co,hc,nox,pmx,all_avg_speed=calc_emission_speed(lanelist=['9575_0','9575_1','9575_2','9712_0','9712_1','9712_2','9712_3','9813_0']) ## i consider to calculate all edges emission and avg speed (for whole network)
         cos.append(co),hcs.append(hc),noxs.append(nox),pmxs.append(pmx)
         inflows.append(curflow )
         inflows_9813.append(curflow_9813 )
