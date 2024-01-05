@@ -9,7 +9,7 @@ from utils.utils import *
 def qew_merge_add_veh(t,mainlane_demand,merge_lane_demand):
     hdv_main_='hdv_main'
     hdv_merge_ = 'hdv_merge' 
-    cav_main_ = 'cav_main' 
+    cav_main_ = 'cav_main' ## this is incase we want to control RL vehicles
     cav_merge_ = 'cav_merge' 
     hdv_main=hdv_main_+str(t)
     hdv_merge=hdv_merge_+str(t)

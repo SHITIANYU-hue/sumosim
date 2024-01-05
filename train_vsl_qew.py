@@ -120,7 +120,7 @@ while t < simdur:
     t = t + 1
 
 
-    speed_list=[2,3,4,5] ##need to train model to do that i am using fixed
+    speed_list=[20,30,40,50] ##need to train model to do that i am using fixed
 
     next_state_, reward_info, done, oflow, bspeed, emission = env.step(speed_list,step=t)
 

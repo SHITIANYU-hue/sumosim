@@ -30,7 +30,7 @@ class sumo_qew_env_merge():
 		self.mergelane_demand=merge_lane_demand
 
 
-	def start(self, gui=False, network_conf="networks/merge_qew_multi/sumoconfig.sumo.cfg", network_xml='networks/merge_qew_multi/qew_mississauga_rd.net.xml'):
+	def start(self, gui=False, network_conf="networks/merge_qew_metering/sumoconfig.sumo.cfg", network_xml='networks/merge_qew_metering/qew_mississauga_rd.net.xml'):
 		self.gui = gui
 		self.network_conf = network_conf
 		self.net = sumolib.net.readNet(network_xml)
@@ -133,18 +133,13 @@ class sumo_qew_env_merge():
 		oflow = 0
 		bspeed = 0
 		set_vsl(v,self.VSLlist)
-		
+		traci.trafficlight.setPhase("J0", 0)
 		for i in range(self.control_horizon):
 			traci.simulationStep()
+			if traci.trafficlight.getPhase("J0") == 0:
+				if len(list(traci.vehicle.getIDList()))>2: ## this is a logic to control traffic light
+					traci.trafficlight.setPhase("J0", 1)
 			qew_merge_add_veh(step*self.control_horizon+i,self.mainlane_demand,self.mergelane_demand)
-			# self.simulation_step += 1
-			# if self.simulation_step == self.incident_time:
-			# 	vehid = traci.vehicle.getIDList()
-			# 	r_tempo = np.random.randint(0, len(vehid) - 1)
-			# 	self.inci_veh = vehid[r_tempo]
-			# 	self.inci_edge = traci.vehicle.getRoadID(self.inci_veh) # get incident edge
-			# if self.simulation_step > self.incident_time and self.simulation_step < self.incident_time + self.incident_length:
-			# 	traci.vehicle.setSpeed(self.inci_veh, 0)                       # set speed as zero, to simulate incidents
 			state_overall = state_overall + self.get_step_state()
 			oflow_,bspeed_,emission=self.compute_reward()
 			oflow = oflow + oflow_
