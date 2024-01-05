@@ -4,7 +4,7 @@ import traci
 import numpy as np
 import os
 import random
-from envs.sumo_cav_qew_env_merge import sumo_qew_env_merge
+from envs.sumo_vsl_qew_env_merge import sumo_qew_env_merge
 from envs.qew_merge_add_veh import qew_merge_add_veh
 import json
 
@@ -18,7 +18,7 @@ parser.add_argument("--algo", type=str, default = 'ppo', help = 'algorithm to ad
 parser.add_argument('--train', type=bool, default=True, help="(default: True)")
 parser.add_argument('--render', type=bool, default=False, help="(default: False)")
 parser.add_argument('--manual', type=bool, default=False, help="(default: False)")
-parser.add_argument('--horizon', type=int, default=180000, help='number of simulation steps, (default: 6000)')
+parser.add_argument('--horizon', type=int, default=1800, help='number of simulation steps, (default: 6000)')
 parser.add_argument('--coop', type=float, default=0, help='cooperative factor for human vehicles')
 parser.add_argument('--epochs', type=int, default=1, help='number of epochs, (default: 1000)')
 parser.add_argument('--tensorboard', type=bool, default=False, help='use_tensorboard, (default: False)')
@@ -32,7 +32,6 @@ args = parser.parse_args()
 
 
     
-env = sumo_qew_env_merge()
 
 
 
@@ -41,12 +40,6 @@ outID_9832=['9832_0loop','9832_1loop','9832_2loop']
 outID_9575=['9575_0loop','9575_1loop','9575_2loop']
 outID_9813=['9813_0loop']
 
-
-# state = np.clip((state_ - state_rms.mean) / (state_rms.var ** 0.5 + 1e-8), -5, 5)
-
-
-# for i in range(len(flow_rates)):
-state = env.reset(gui=args.render)
 action={}
 
 
@@ -71,14 +64,19 @@ time_step=0.1
 total_travel_time=0
 densities = []
 data=[]
+env = sumo_qew_env_merge(mainlane_demand,merge_lane_demand)
+state = env.reset(gui=args.render)
 
 t=1
+VSLlist=['9712_0','9712_1','9712_2','9712_3']
+
+
 
 while t < simdur:
     print('step', t)
     lane = 0
     acceleration = 0  # 0 for no change, 1 for acceleration, -1 for deceleration
-    veh_id_list=qew_merge_add_veh(t,mainlane_demand,merge_lane_demand)
+    # veh_id_list=qew_merge_add_veh(t,mainlane_demand,merge_lane_demand)
     vehPermid = get_vehicle_number('9712_1') + get_vehicle_number('9712_2') + get_vehicle_number('9712_3')
     vehPerout = get_vehicle_number('9728_0') + get_vehicle_number('9728_1') + get_vehicle_number('9728_2')
 
@@ -88,7 +86,6 @@ while t < simdur:
     veh_number_total=traci.vehicle.getIDCount()
 
     total_travel_time = total_travel_time+ (time_step*veh_number_total)/3600
-
 
 
     curdensity += vehPermid / traci.lane.getLength('9712_1')
@@ -102,7 +99,7 @@ while t < simdur:
         curflow_9575 = curflow_9575 + calc_outflow(outID_9575)
         avg_speed=(get_meanspeed('9712_1')+get_meanspeed('9712_2')+get_meanspeed('9712_3')+get_meanspeed('9712_0'))/4 ### this is only bottlneck's speed
 
-        co,hc,nox,pmx,all_avg_speed=calc_emission_speed() ## i consider to calculate all edges emission and avg speed (for whole network)
+        co,hc,nox,pmx,all_avg_speed=calc_emission_speed()
         cos.append(co),hcs.append(hc),noxs.append(nox),pmxs.append(pmx)
         inflows.append(curflow )
         inflows_9813.append(curflow_9813 )
@@ -123,11 +120,10 @@ while t < simdur:
 
     t = t + 1
 
-    for i in range(len(veh_id_list)):
-        action[veh_id_list[i]] = [2, 0]
-    
-    next_state_, reward_info, done, info = env.step(
-        action, veh_id_list,sumo_lc=False, sumo_carfollow=False, stop_and_go=False, car_follow='Gipps', lane_change='SECRM')
+
+    speed_list=[2,3,4,5] ##need to train model to do that i am using fixed
+
+    next_state_, reward_info, done, oflow, bspeed, emission = env.step(speed_list,step=t)
 
     
     if done:
@@ -136,11 +132,11 @@ while t < simdur:
 
     
     # # # # Save the average values
-    np.save(f'results/9728/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows)
-    np.save(f'results/9813/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9813)
-    np.save(f'results/9832/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9832)
-    np.save(f'results/9575/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9575)
-    np.save(f'results/Main{mainlane_demand}_merge{merge_lane_demand}average_density2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', densities)
+    # np.save(f'results/9728/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows)
+    # np.save(f'results/9813/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9813)
+    # np.save(f'results/9832/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9832)
+    # np.save(f'results/9575/Main{mainlane_demand}_merge{merge_lane_demand}average_flow2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', inflows_9575)
+    # np.save(f'results/Main{mainlane_demand}_merge{merge_lane_demand}average_density2730_1.2_idm_lcCoop{args.coop}_lcStrategic1_freedepart.npy', densities)
 print('total travel time (h):',total_travel_time)
 print('average bottleneck speed:',np.mean(avg_speeds))
 print('average emission: ','CO:',np.mean(cos),'HC:',np.mean(hcs),'NOX:',np.mean(noxs),'PMX:',np.mean(pmxs))
