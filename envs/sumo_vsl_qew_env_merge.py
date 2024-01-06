@@ -16,7 +16,7 @@ class sumo_qew_env_merge():
 		self.curr_step = 0
 		self.collision = False
 		self.done = False
-		self.control_horizon=60
+		self.control_horizon=100
 		self.outID_9728=['9728_0loop','9728_1loop','9728_2loop']
 		self.outID_9832=['9832_0loop','9832_1loop','9832_2loop']
 		self.outID_9575=['9575_0loop','9575_1loop','9575_2loop']
@@ -120,7 +120,7 @@ class sumo_qew_env_merge():
 		
 
 
-	def step(self, v,step):
+	def step(self, v,step,close_ramp):
 
 		done=False
 
@@ -137,7 +137,7 @@ class sumo_qew_env_merge():
 		for i in range(self.control_horizon):
 			traci.simulationStep()
 			if traci.trafficlight.getPhase("J0") == 0:
-				if len(list(traci.vehicle.getIDList()))>2: ## this is a logic to control traffic light
+				if close_ramp==True: ## this is a logic to control traffic light
 					traci.trafficlight.setPhase("J0", 1)
 			qew_merge_add_veh(step*self.control_horizon+i,self.mainlane_demand,self.mergelane_demand)
 			state_overall = state_overall + self.get_step_state()

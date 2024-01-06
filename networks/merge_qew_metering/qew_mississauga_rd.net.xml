@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2024-01-05 15:36:45 by Eclipse SUMO netedit Version v1_16_0+1958-0ab20a374a1
+<!-- generated on 2024-01-05 18:10:23 by Eclipse SUMO netedit Version v1_16_0+1958-0ab20a374a1
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumocfg-file value="/home/tianyu/code/uoftexp/sumosim/networks/merge_qew_metering/1.sumocfg"/>
         <sumo-net-file value="/home/tianyu/code/uoftexp/sumosim/networks/merge_qew_metering/qew_mississauga_rd.net.xml"/>
     </input>
 
@@ -668,8 +667,7 @@
 
     <tlLogic id="J0" type="static" programID="0" offset="0">
         <phase duration="82" state="G"/>
-        <phase duration="3"  state="y"/>
-        <phase duration="5"  state="r"/>
+        <phase duration="82"  state="r"/>
     </tlLogic>
 
     <junction id="9580" type="priority" x="5924.26" y="3871.74" incLanes="9581_0 9584_0" intLanes=":9580_0_0 :9580_1_0" shape="5942.23,4048.95 5948.62,4038.79 5948.41,4038.71 5941.92,4048.75">
@@ -1058,7 +1056,7 @@
     <connection from="9804" to="9794" fromLane="0" toLane="1" via=":9793_0_1" dir="r" state="M"/>
     <connection from="9804" to="9787" fromLane="1" toLane="2" via=":9793_2_0" dir="l" state="m"/>
     <connection from="9813" to="9813.510" fromLane="0" toLane="0" via=":J0_0_0" tl="J0" linkIndex="0" dir="s" state="O"/>
-    <connection from="9813.510" to="9712" fromLane="0" toLane="0" via=":9840_0_0" dir="s" state="M"/>
+    <connection from="9813.510" to="9712" fromLane="0" toLane="0" pass="1" via=":9840_0_0" dir="s" state="M"/>
     <connection from="9814" to="9820" fromLane="0" toLane="0" via=":9819_3_0" dir="s" state="M"/>
     <connection from="9820" to="9832" fromLane="1" toLane="0" via=":9831_0_0" dir="s" state="M"/>
     <connection from="9820" to="9832" fromLane="2" toLane="1" via=":9831_0_1" dir="s" state="M"/>
@@ -1066,7 +1064,6 @@
     <connection from="9832" to="9712" fromLane="0" toLane="1" via=":9840_1_0" dir="s" state="M"/>
     <connection from="9832" to="9712" fromLane="1" toLane="2" via=":9840_1_1" dir="s" state="M"/>
     <connection from="9832" to="9712" fromLane="2" toLane="3" via=":9840_1_2" dir="s" state="M"/>
-
     <connection from=":9580_0" to="9582" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":9580_1" to="9585" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":9587_0" to="9581" fromLane="0" toLane="0" dir="s" state="M"/>

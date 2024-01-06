@@ -7,6 +7,8 @@ import random
 from envs.sumo_vsl_qew_env_merge import sumo_qew_env_merge
 from envs.merge_add_veh import qew_merge_add_veh
 import json
+from agents.llm_vsl_control import llmvslagent
+import ast
 
 from utils.utils import *
 os.makedirs('./model_weights', exist_ok=True)
@@ -18,7 +20,7 @@ parser.add_argument("--algo", type=str, default = 'ppo', help = 'algorithm to ad
 parser.add_argument('--train', type=bool, default=True, help="(default: True)")
 parser.add_argument('--render', type=bool, default=False, help="(default: False)")
 parser.add_argument('--manual', type=bool, default=False, help="(default: False)")
-parser.add_argument('--horizon', type=int, default=1800, help='number of simulation steps, (default: 6000)')
+parser.add_argument('--horizon', type=int, default=100, help='number of simulation steps, (default: 6000)')
 parser.add_argument('--coop', type=float, default=0, help='cooperative factor for human vehicles')
 parser.add_argument('--epochs', type=int, default=1, help='number of epochs, (default: 1000)')
 parser.add_argument('--tensorboard', type=bool, default=False, help='use_tensorboard, (default: False)')
@@ -31,7 +33,6 @@ args = parser.parse_args()
 
 
 
-    
 
 
 
@@ -46,7 +47,7 @@ action={}
 
 mainlane_demand = 3300 ##5500, 4400,3850,3300
 merge_lane_demand = 1250
-interval = 2000  # interval for calculating average statistics
+interval = 10  # interval for calculating average statistics
 simdur = args.horizon  # assuming args.horizon represents the total simulation duration
 curflow = 0
 curflow_9813 = 0
@@ -69,7 +70,9 @@ state = env.reset(gui=args.render)
 
 t=1
 VSLlist=['9712_0','9712_1','9712_2','9712_3']
-
+lane_list=['9712_0','9712_1','9712_2','9712_3','9832_0','9832_1','9832_2','9813_0']
+agent=llmvslagent()
+next_state_ = [0] * 12
 
 
 while t < simdur:
@@ -98,7 +101,7 @@ while t < simdur:
         curflow_9575 = curflow_9575 + calc_outflow(outID_9575)
         avg_speed=(get_meanspeed('9712_1')+get_meanspeed('9712_2')+get_meanspeed('9712_3')+get_meanspeed('9712_0'))/4 ### this is only bottlneck's speed
 
-        co,hc,nox,pmx,all_avg_speed=calc_emission_speed()
+        co,hc,nox,pmx,all_avg_speed=calc_emission_speed(lane_list)
         cos.append(co),hcs.append(hc),noxs.append(nox),pmxs.append(pmx)
         inflows.append(curflow )
         inflows_9813.append(curflow_9813 )
@@ -118,11 +121,51 @@ while t < simdur:
         curdensity = 0
 
     t = t + 1
+    flow_sensor={
+        'curflow_9813':inflows_9813,
+        'curflow_9832':inflows_9832,
+        'curflow_9728':inflows
+    }
 
+    occupancy={
+        '9712_front_lane_0':next_state_[0],
+        '9712_front_lane_1':next_state_[1],
+        '9712_front_lane_2':next_state_[2],
+        '9712_front_lane_3':next_state_[3],
 
-    speed_list=[20,30,40,50] ##need to train model to do that i am using fixed
+        '9712_middle_lane_0':next_state_[4],
+        '9712_middle_lane_1':next_state_[5],
+        '9712_middle_lane_2':next_state_[6],
+        '9712_middle_lane_3':next_state_[7],
 
-    next_state_, reward_info, done, oflow, bspeed, emission = env.step(speed_list,step=t)
+        '9712_back_lane_0':next_state_[8],
+        '9712_back_lane_1':next_state_[9],
+        '9712_back_lane_2':next_state_[10],
+        '9712_back_lane_3':next_state_[11],
+
+    }
+    print('flow sensor',flow_sensor)
+    print('occupancy',occupancy)
+    
+
+    if t % interval == 0:
+        decision=agent.generate_decision(flow_sensor,occupancy)
+        print('decision',decision)
+        try:
+            decision_ = ast.literal_eval(decision)
+            speed_list=[decision_['9712_lane_0_speed_limit'],decision_['9712_lane_1_speed_limit'],decision_['9712_lane_2_speed_limit'],decision_['9712_lane_3_speed_limit']]
+            close_ramp=decision_['decision_of_ramp']
+        except:
+            print('failed!!!!!!')
+            speed_list=[30,30,30,30]
+            close_ramp=False
+    else:
+            speed_list=[30,30,30,30]
+            close_ramp=False
+
+    # speed_list=[20,30,40,50] ##need to train model to do that i am using fixed
+
+    next_state_, reward_info, done, oflow, bspeed, emission = env.step(speed_list,step=t, close_ramp=False)
 
     
     if done:
