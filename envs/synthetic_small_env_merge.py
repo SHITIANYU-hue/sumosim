@@ -45,7 +45,7 @@ class sumo_env_merge():
 		self.done = False
 		self.lane_change_model = 0b00100000000 ## disable lane change
 		self.speed_mode=32 ## disable all check for speed
-		self.stats_path='results/stat1.xml'
+		self.stats_path='results_small/stat1.xml'
 		# Starting sumo
 		home = os.getenv("HOME")
 
@@ -93,7 +93,7 @@ class sumo_env_merge():
 		edge = self.curr_lane.split("_")[0]
 		agent_lane_index = self.curr_sublane
 		lanes = [lane for lane in self.lane_ids if edge in lane]
-		state = np.zeros([self.grid_state_dim, self.grid_state_dim])
+		state = np.zeros([self.grid_state_dim, self.grid_state_dim], dtype=object)
 		# Putting agent
 		agent_x, agent_y = 1, agent_lane_index
 		state[agent_x, agent_y] = -1
@@ -111,7 +111,8 @@ class sumo_env_merge():
 				if get_distance(agent_pos, veh_pos) > threshold_distance:
 					continue
 				rl_angle = traci.vehicle.getAngle(name)
-				veh_id = vehicle.split("_")[1]
+				# veh_id = vehicle.split("_")[1]
+				veh_id = vehicle
 				angle = angle_between(agent_pos, veh_pos, rl_angle)
 				# Putting on the right
 				if angle > 337.5 or angle < 22.5:
@@ -161,15 +162,15 @@ class sumo_env_merge():
 		before = 0
 		grid_state = self.get_grid_state(name).flatten()
 		for num, vehicle in enumerate(grid_state):
-			if vehicle  >=9:
-				vehicle=0 ## not sure why will greater than 9?
+			# if vehicle  >=9:
+			# 	vehicle=0 ## not sure why will greater than 9? (i think it is unnecessary)
 			if vehicle == 0:
 				continue
 			if vehicle == -1:
 				vehicle_name = self.name
 				before = 1
 			else:
-				vehicle_name = 'vehiclerl_'+(str(int(vehicle)))
+				vehicle_name = vehicle ## this shall be changed
 			veh_info = self.get_vehicle_info(vehicle_name)
 			idx_init = num*4
 			if before and vehicle != -1:
@@ -240,15 +241,18 @@ class sumo_env_merge():
 			w_speed = 1
 			w_change = 0
 			w_eff = 1
-			w_safe=0.1
+			w_safe=0
 			
 			this_vel,lead_vel,lead_info,headway,target_speed=self.get_ego_veh_info(name)
 			if this_vel<-5000:
 				this_vel=0
-			info=[target_speed,lead_vel,this_vel]
-			controller=GippsController()
+			info=[target_speed,lead_vel,headway,this_vel]
+			# print('target speed',target_speed)
+			gipps_speed=GippsController().get_speed(info)
 			# target_speed= controller.get_speed(info)
-			R_speed = -np.abs(this_vel - 25)
+			# print('gipps speed',gipps_speed)
+			# or R_speed = -np.abs(this_vel - target_speed)
+			R_speed = -np.abs(this_vel - gipps_speed)
 			# print('R speed',R_speed)
 			if action[0]!=0:
 				R_change = -1
@@ -264,8 +268,8 @@ class sumo_env_merge():
 
 			R_safe=w_safe*R_safe
 			jerk = self.compute_jerk()
-			# R_comf = -alpha_comf*jerk**2
-			R_comf=jerk
+			R_comf = -alpha_comf*jerk**2
+			# print('r safe',R_safe,'r eff',R_eff,'r comfort', R_comf)
 			R_tot = R_comf + R_eff + R_safe
 			# print('R total',R_tot)
 
@@ -327,164 +331,38 @@ class sumo_env_merge():
 	def compute_action(self,action,name,max_dec=-3,max_acc=3,stop_and_go=False,sumo_lc=False,sumo_carfollow=False,lane_change='SECRM',car_follow='Gipps'):
 		this_vel,lead_vel,lead_info,headway,target_speed=self.get_ego_veh_info(name)
 		# print('this vel',this_vel)
+		# print('action',action,'name',name)
 		# print('headway',headway)
 		if headway <10 and this_vel>lead_vel:
 			action[1]=-3
+		# action[0]=map_action(action[0])
 
-		if sumo_lc:
-			# 2^0: right neighbors (else: left)
-			# 2^1: neighbors ahead (else: behind)
-			# 2^2: only neighbors blocking a potential lane change (else: all)
-			# right: -1, left: 1. sublane-change within current lane: 0.
-			if lane_change=='random':
-				traci.vehicle.setLaneChangeMode(name,self.lane_change_model)
-				if this_vel<lead_vel and lead_info is not None:
-					change_right=traci.vehicle.couldChangeLane(name,-1)
-					if change_right:
-						traci.vehicle.changeLane(name,1, 0.1)
+		# action[1]=max(max_dec, min(action[1], max_acc))
+		parts=self.curr_lane.split("_")
+		if len(parts)>=2:
+			edge="_".join(parts[0:2])
+		if len(parts)==2:
+			edge=parts[0]
+		num_lanes = traci.edge.getLaneNumber(edge)
 
-					change_left=traci.vehicle.couldChangeLane(name,1)
-					if change_left:
-						traci.vehicle.changeLane(name,2, 0.1)
+		if action[0] != 0:
+			if action[0] == 1: ## change to right 
+				if self.curr_sublane >=1 :
+					try:
+						traci.vehicle.changeLane(name, self.curr_sublane-1, 0.1)
+					except:
+						pass
 
-			if lane_change=='SECRM':
+			if action[0] == 2: ## change to left
+				if self.curr_sublane < num_lanes-1:
+					try:
+						traci.vehicle.changeLane(name, self.curr_sublane + 1, 0.1)
+					except:
+						pass
 
-				controller=GippsController()
-				lead_left= traci.vehicle.getNeighbors(name,'010')
-				lead_right=traci.vehicle.getNeighbors(name,'011')
-				lead_info=traci.vehicle.getLeader(name)
-				this_vel=traci.vehicle.getSpeed(name)
-				headway=9999
-				if lead_left is None or len(lead_left) == 0:  # no car ahead
-					lead_id=0
-					lead_vel=self.target_speed
-					headway_left=headway
-				else:
-					lead_id=lead_left[0][0]
-					lead_vel=traci.vehicle.getSpeed(lead_id)
-					headway_left=self.calculate_distance_veh(lead_id,name)
-				info_n=[self.target_speed,lead_vel,headway_left,this_vel]
-				speed_n= controller.get_speed(info_n)
+		self.apply_acceleration(name,action[1])
 
-				if lead_right is None or len(lead_right) == 0 :  # no car ahead
-					lead_id=0
-					lead_vel=self.target_speed
-					headway_right=headway
-				else:
-					lead_id=lead_right[0][0]
-					lead_vel=traci.vehicle.getSpeed(lead_id)
-					headway_right=self.calculate_distance_veh(lead_id,name)
-				info_s=[self.target_speed,lead_vel,headway_right,this_vel]
-				speed_s= controller.get_speed(info_s)
-
-				if lead_info is None or lead_info == '' or lead_info[1]>30:  # no car ahead
-					lead_id=0
-					lead_vel=self.target_speed
-					headway_e=headway
-				else:
-					lead_id=lead_info[0]
-					lead_vel=traci.vehicle.getSpeed(lead_id)
-					headway_e=self.calculate_distance_veh(lead_id,name)
-				info_e=[self.target_speed,lead_vel,headway_e, this_vel]
-				speed_e= controller.get_speed(info_e)
-				# print('target',self.target_speed)
-				# print('current speed',this_vel)
-
-				change_right=traci.vehicle.couldChangeLane(name,-1)
-				change_left=traci.vehicle.couldChangeLane(name,1)
-
-
-				# print('ego veh speed:', this_vel)
-				# print('change right',change_right,'change left',change_left)
-				action[0]=0
-				if speed_n>speed_e and speed_n >speed_s and change_left:
-					action[0]=2
-				if speed_s>speed_e and speed_s > speed_n and change_right:
-					action[0]=1
-				if abs(speed_n-speed_s)<10 and min(speed_n,speed_s)>speed_e:
-					if change_right==True and change_left==False:
-						action[0]=1
-					if change_left ==True and change_right==False:
-						action[0]=2
-					if change_left ==True and change_right==True:
-						action[0]=1
-				
-				veh_pos = traci.vehicle.getPosition(name)[0]
-				if veh_pos>3899 and veh_pos <4129 and traci.vehicle.getLaneID(name)=='9712_0' and change_left==True:
-					# print('name',name,'pos',veh_pos,traci.vehicle.getLaneID(name))
-					action[0]=2
-				if action[0] == 1:
-					# print('change right !!')
-					if self.curr_sublane == 1:
-						traci.vehicle.changeLane(name, 0, 0.1)
-					elif self.curr_sublane == 2:
-						traci.vehicle.changeLane(name, 1, 0.1)
-				if action[0] == 2:
-					# print('change left !!')
-					if self.curr_sublane == 0:
-						traci.vehicle.changeLane(name, 1, 0.1)
-					elif self.curr_sublane == 1:
-						traci.vehicle.changeLane(name, 2, 0.1)
-			# if name=='vehiclerl_0':
-				# print('veh pos',veh_pos)
-				# print('veh name',name,'action',action)
-				# print('ego secrm speed',speed_e,'north secrm speed',speed_n,'south secrm speed',speed_s)
-
-
-		# Action legend : 0 stay, 1 change to right, 2 change to left
-		else:
-			action[0]=map_action(action[0])
-			# action[1]=max(max_dec, min(action[1], max_acc))
-			if self.curr_lane[0] == 'e':
-				action[0] = 0
-			if action[0] != 0:
-				if action[0] == 1:
-					if self.curr_sublane == 1:
-						traci.vehicle.changeLane(name, 0, 0.1)
-					elif self.curr_sublane == 2:
-						traci.vehicle.changeLane(name, 1, 0.1)
-				if action[0] == 2:
-					if self.curr_sublane == 0:
-						traci.vehicle.changeLane(name, 1, 0.1)
-					elif self.curr_sublane == 1:
-						traci.vehicle.changeLane(name, 2, 0.1)
-
-		if sumo_carfollow:
-			if car_follow=='IDM':
-				controller=IDMController()
-				info=[this_vel,target_speed,headway,lead_vel,lead_info]
-				acceleration= controller.get_accel(info)
-
-			if car_follow=='Gipps':
-				controller=GippsController()
-				info=[target_speed,lead_vel,this_vel,speed_e]
-				acceleration= controller.get_accel(info)
-
-			action[1]=acceleration
-			self.apply_acceleration(name,acceleration)
-
-
-
-
-		else:	
-			self.apply_acceleration(name,action[1])
 			
-		edge = self.curr_lane.split("_")[0]
-		# if slow_down:
-		lanes = [lane for lane in self.lane_ids if edge in lane]
-
-		if stop_and_go:
-			for lane in lanes:
-				# Get vehicles in the lane
-				vehicles = traci.lane.getLastStepVehicleIDs(lane)
-				for vehicle in vehicles:
-					if vehicle!=name:
-						info=self.get_vehicle_info(vehicle)
-						road=traci.vehicle.getRoadID(vehicle)
-						if road=='gneE6' and info[1]>3 :
-							self.apply_acceleration(vehicle,-4)
-		# 		if info[0]>0 and info[0]<50: ## travel distance in  between 50 to 150?
-		# 			self.apply_acceleration(vehicle,-1)
 
 
 
@@ -499,15 +377,10 @@ class sumo_env_merge():
 		- return nextstate, reward and done
 		'''
 		done=False
-
 		for i in range(len(veh_id_list)):
-			try:
-				self.compute_action(action[veh_id_list[i]],veh_id_list[i],max_dec=max_dec,max_acc=max_acc,stop_and_go=stop_and_go,sumo_lc=sumo_lc,sumo_carfollow=sumo_carfollow,lane_change=lane_change,car_follow=car_follow)
-			except:
-				done=True 
-				break
-		# Sim step
-		traci.simulationStep()
+			self.compute_action(action[veh_id_list[i]],veh_id_list[i],max_dec=max_dec,max_acc=max_acc,stop_and_go=stop_and_go,sumo_lc=sumo_lc,sumo_carfollow=sumo_carfollow,lane_change=lane_change,car_follow=car_follow)
+
+
 		collision=False
 		# action[0]=map_to_minus_zero_plus(action[0])
 		# Check collision
@@ -522,12 +395,14 @@ class sumo_env_merge():
 		# Compute Reward
 		reward=0
 		for i in range(len(veh_id_list)):
-			try:
-				reward_i = self.compute_reward(collision, action[veh_id_list[i]],veh_id_list[i])
-				reward+=reward_i[0]
-			except:
-				done=True
-				break
+			reward_i = self.compute_reward(collision, action[veh_id_list[i]],veh_id_list[i])
+			reward+=reward_i[0]
+
+		# Sim step
+		traci.simulationStep()
+
+		veh_id_list=list(traci.vehicle.getIDList()) ## when it compute the action some vehicle will run out 
+
 		# Update agent params 
 		if not collision and not done:
 			for i in range(len(veh_id_list)):
@@ -535,12 +410,8 @@ class sumo_env_merge():
 		# State
 		next_state=[]
 		for i in range(len(veh_id_list)):
-			try:
-				next_state = self.get_state(veh_id_list[i])
-				self.rl_vehicles_state[veh_id_list[i]]=next_state
-			except:
-				done=True
-				break
+			next_state = self.get_state(veh_id_list[i])
+			self.rl_vehicles_state[veh_id_list[i]]=next_state
 		# Update curr state
 		self.curr_step += 1
 		next_state=self.rl_vehicles_state
