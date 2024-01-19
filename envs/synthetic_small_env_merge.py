@@ -29,6 +29,7 @@ class sumo_env_merge():
 		self.lane_ids = []
 		self.rl_names = []
 		self.rl_vehicles_state = {}
+		self.rewards={}
 		self.rl_vehicles_action={}
 		self.max_steps = 6000
 		self.curr_step = 0
@@ -36,11 +37,12 @@ class sumo_env_merge():
 		self.done = False
 
 
-	def start(self, gui=False, network_conf="networks/merge_synth_small/sumoconfig.sumo.cfg", network_xml='networks/merge_synth_small/merge.net.xml'):
+	def start(self, gui=False, warm_up_step=1000,network_conf="networks/merge_synth_small/sumoconfig.sumo.cfg", network_xml='networks/merge_synth_small/merge.net.xml'):
 		self.gui = gui
 		self.network_conf = network_conf
 		self.net = sumolib.net.readNet(network_xml)
 		self.curr_step = 0
+		self.warm_up_step=warm_up_step
 		self.collision = False
 		self.done = False
 		self.lane_change_model = 0b00100000000 ## disable lane change
@@ -61,7 +63,8 @@ class sumo_env_merge():
 
 		self.lane_ids = traci.lane.getIDList()
 
-
+		# for step in range(self.warm_up_step):
+		# 	traci.simulationStep()
 		# Setting the lane change mode to 0 meaning that we disable any autonomous lane change and collision avoidance
 		for i in range(len(self.rl_names)):
 		# Setting up useful parameters
@@ -397,6 +400,7 @@ class sumo_env_merge():
 		for i in range(len(veh_id_list)):
 			reward_i = self.compute_reward(collision, action[veh_id_list[i]],veh_id_list[i])
 			reward+=reward_i[0]
+			self.rewards[veh_id_list[i]]=reward_i
 
 		# Sim step
 		traci.simulationStep()
@@ -410,7 +414,7 @@ class sumo_env_merge():
 		# State
 		next_state=[]
 		for i in range(len(veh_id_list)):
-			next_state = self.get_state(veh_id_list[i])
+			next_state = self.get_state(veh_id_list[i]) ##length is 65
 			self.rl_vehicles_state[veh_id_list[i]]=next_state
 		# Update curr state
 		self.curr_step += 1
@@ -421,7 +425,7 @@ class sumo_env_merge():
 			done = True
 			self.curr_step = 0
 
-		return next_state, reward, done, collision
+		return next_state, self.rewards, done, collision
 		
 	def render(self, mode='human', close=False):
 		pass
@@ -432,7 +436,9 @@ class sumo_env_merge():
 		veh_id_list=list(traci.vehicle.getIDList())
 		for i in range(len(veh_id_list)):
 			self.rl_vehicles_state[veh_id_list[i]]=self.get_state(veh_id_list[i])
-		return self.rl_vehicles_state
+		# print('type',self.rl_vehicles_state)
+		return np.zeros(65)
+
 
 	def close(self):
 		traci.close(False)
