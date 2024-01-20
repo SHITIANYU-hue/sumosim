@@ -5,7 +5,7 @@ import numpy as np
 import os
 import random
 from envs.synthetic_small_env_merge import sumo_env_merge
-from envs.merge_add_veh import syn_merge_add_veh
+from envs.add_veh import syn_merge_add_veh
 import json
 
 from utils.utils import *
@@ -126,7 +126,7 @@ while t < simdur:
     next_state_, reward_info, done, info = env.step(
         action, veh_id_list)
 
-    
+
     if done:
         # print('rl vehicle run out of network!!')
         pass

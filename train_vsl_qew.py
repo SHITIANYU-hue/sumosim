@@ -5,7 +5,7 @@ import numpy as np
 import os
 import random
 from envs.sumo_vsl_qew_env_merge import sumo_qew_env_merge
-from envs.merge_add_veh import qew_merge_add_veh
+from envs.add_veh import qew_merge_add_veh
 import json
 from agents.llm_vsl_control import llmvslagent
 import ast
