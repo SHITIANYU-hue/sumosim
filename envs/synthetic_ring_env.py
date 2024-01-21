@@ -239,7 +239,7 @@ class sumo_env_ring():
 			# total reward
 			R_tot = R_comf + R_eff + R_safe
 
-		if reward_type=='secrm':
+		if reward_type=='secrm': ### need update
 			alpha_comf = 0.1
 			w_speed = 1
 			w_change = 0
