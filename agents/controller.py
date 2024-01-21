@@ -110,7 +110,7 @@ class GippsController:
                  b=-1.5, ## 增加这个参数（如-1到-3）会导致其急停，进而导致削弱eff，此外会增加collision rate, 如果增加这个参数会使得自车更加靠近前车（但是容易相撞）
                  b_l=-0.8,
                  s0=4,
-                 tau=0.1,#把这个参数改到了1之后更容易发生碰撞了
+                 tau=1,#把这个参数改到了1之后更容易发生碰撞了
                  sim_step=0.1):
         """Instantiate a Gipps' controller."""
 
@@ -149,8 +149,52 @@ class GippsController:
 
         # print('v acc',v_acc,'v safe',v_safe,'target',target_speed)
         v_next = min(v_acc, v_safe, target_speed)
-        # v_next = min(v_acc, target_speed)
         acceleration=(v_next-this_vel)/self.sim_step
 
         return acceleration
 
+class secrmController:
+    def __init__(self,
+                 v0=30,
+                 acc=1.5, 
+                 b=3,
+                 a=3,
+                 eps=4,
+                 tau=0.1,#reaction time
+                 sim_step=0.1):
+        """Instantiate a secrm' controller."""
+
+        self.v_desired = v0
+        self.acc = acc
+        self.b = b
+        self.a = a
+        self.eps = eps
+        self.tau = tau
+        self.sim_step=sim_step
+
+    def get_speed(self, info):
+        """See parent class."""
+        this_vel,target_speed,headway,lead_vel,lead_info=info
+        gnew = headway - self.tau*(this_vel - lead_vel)
+        vnew_sqrt = np.maximum((lead_vel + 0.5**self.tau)*(lead_vel + 0.5*self.b*self.tau) + 2*self.b*(headway - lead_vel*self.tau - self.eps) - self.b*self.tau*(this_vel - lead_vel), 0.0)
+    #    vnew_sqrt = (w + 0.5*b*r)*(w + 0.5*b*r) + 2*b*(g - w*r - eps) - b*r*(v - w)
+        vnew = -0.5 * self.b * self.tau + np.sqrt(vnew_sqrt)
+        vnew = np.clip(vnew, 0.0, this_vel + self.tau*self.a)
+        vnew = np.minimum(vnew, target_speed)
+        # v_next = min(v_acc, target_speed)
+
+        return vnew
+    
+
+    def get_accel(self, info):
+        """See parent class."""
+        this_vel,target_speed,headway,lead_vel,lead_info=info
+        gnew = headway - self.tau*(this_vel - lead_vel)
+        vnew_sqrt = np.maximum((lead_vel + 0.5**self.tau)*(lead_vel + 0.5*self.b*self.tau) + 2*self.b*(headway - lead_vel*self.tau - self.eps) - self.b*self.tau*(this_vel - lead_vel), 0.0)
+    #    vnew_sqrt = (w + 0.5*b*r)*(w + 0.5*b*r) + 2*b*(g - w*r - eps) - b*r*(v - w)
+        vnew = -0.5 * self.b * self.tau + np.sqrt(vnew_sqrt)
+        vnew = np.clip(vnew, 0.0, this_vel + self.tau*self.a)
+        vnew = np.minimum(vnew, target_speed)
+        # v_next = min(v_acc, target_speed)
+        acceleration=(vnew-this_vel)/self.sim_step
+        return acceleration
