@@ -48,7 +48,7 @@ simdur = args.horizon  # assuming args.horizon represents the total simulation d
 data=[]
 
 t=1
-controller_='idm' # or idm
+controller_='secrm' # or idm
 veh_id_list=syn_ring_add_veh()
 gaps=[]
 speeds=[]
@@ -74,6 +74,10 @@ while t < simdur:
             action[veh_id_list[i]] = [0,action_]
         if controller_=='gipps':
             controller=GippsController()
+            action_=controller.get_accel(state[veh_id_list[i]])
+            action[veh_id_list[i]] = [0,action_]
+        if controller_=='secrm':
+            controller=secrmController()
             action_=controller.get_accel(state[veh_id_list[i]])
             action[veh_id_list[i]] = [0,action_]
     print('actions',action)
