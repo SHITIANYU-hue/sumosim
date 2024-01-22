@@ -108,16 +108,18 @@ def syn_merge_add_veh(t,mainlane_demand,merge_lane_demand):
 
     return veh_id_list
 
-def syn_ring_add_veh(departspeed_lead=20,departspeed_follow=15,speed_limit=25,num_follow=3,departLane=0):
+def syn_ring_add_veh(departspeed_lead=25,departspeed_follow=15,speed_limit=25,num_follow=3,departLane=0):
     leader='lead_'
     follower = 'follower_' 
     traci.vehicle.add(leader, routeID='route_0', typeID='human', departLane=departLane, departSpeed=departspeed_lead)
     traci.vehicle.setLaneChangeMode(leader,0b001000000000)
+    speed_mode=32 ## disable all check for speed
 
     for i in range(num_follow):
         follower_=follower+str(i)
         traci.vehicle.add(follower_, routeID='route_0', typeID='rl', departLane=departLane, departSpeed=departspeed_follow)
         traci.vehicle.setLaneChangeMode(follower_,0b001000000000)
+        traci.vehicle.setSpeedMode(follower_, speed_mode)
 
     veh_id_list=list(traci.vehicle.getIDList())
     return veh_id_list
