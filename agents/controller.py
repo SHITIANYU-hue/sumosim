@@ -176,7 +176,7 @@ class secrmController:
         """See parent class."""
         this_vel,target_speed,headway,lead_vel,lead_info=info
         gnew = headway - self.tau*(this_vel - lead_vel)
-        vnew_sqrt = np.maximum((lead_vel + 0.5**self.tau)*(lead_vel + 0.5*self.b*self.tau) + 2*self.b*(headway - lead_vel*self.tau - self.eps) - self.b*self.tau*(this_vel - lead_vel), 0.0)
+        vnew_sqrt = np.maximum((lead_vel + 0.5*self.b*self.tau)*(lead_vel + 0.5*self.b*self.tau) + 2*self.b*(headway - lead_vel*self.tau - self.eps) - self.b*self.tau*(this_vel - lead_vel), 0.0)
     #    vnew_sqrt = (w + 0.5*b*r)*(w + 0.5*b*r) + 2*b*(g - w*r - eps) - b*r*(v - w)
         vnew = -0.5 * self.b * self.tau + np.sqrt(vnew_sqrt)
         vnew = np.clip(vnew, 0.0, this_vel + self.tau*self.a)
@@ -190,7 +190,7 @@ class secrmController:
         """See parent class."""
         this_vel,target_speed,headway,lead_vel,lead_info=info
         gnew = headway - self.tau*(this_vel - lead_vel)
-        vnew_sqrt = np.maximum((lead_vel + 0.5**self.tau)*(lead_vel + 0.5*self.b*self.tau) + 2*self.b*(headway - lead_vel*self.tau - self.eps) - self.b*self.tau*(this_vel - lead_vel), 0.0)
+        vnew_sqrt = np.maximum((lead_vel + 0.5*self.b*self.tau)*(lead_vel + 0.5*self.b*self.tau) + 2*self.b*(headway - lead_vel*self.tau - self.eps) - self.b*self.tau*(this_vel - lead_vel), 0.0)
     #    vnew_sqrt = (w + 0.5*b*r)*(w + 0.5*b*r) + 2*b*(g - w*r - eps) - b*r*(v - w)
         vnew = -0.5 * self.b * self.tau + np.sqrt(vnew_sqrt)
         vnew = np.clip(vnew, 0.0, this_vel + self.tau*self.a)
