@@ -334,8 +334,6 @@ class sumo_env_ring():
 		# print('this vel',this_vel)
 		# print('action',action,'name',name)
 		# print('headway',headway)
-		if headway <10 and this_vel>lead_vel:
-			action[1]=-3
 		# action[0]=map_action(action[0])
 
 		# action[1]=max(max_dec, min(action[1], max_acc))

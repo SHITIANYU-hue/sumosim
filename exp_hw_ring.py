@@ -52,6 +52,7 @@ controller_='secrm' # or idm
 veh_id_list=syn_ring_add_veh()
 gaps=[]
 speeds=[]
+actions=[]
 while t < simdur:
     veh_id_list = [veh_id for veh_id in traci.vehicle.getIDList() if not veh_id.startswith('lead_')]
     print('id list',len(veh_id_list))
@@ -60,7 +61,7 @@ while t < simdur:
     acceleration = 0  # 0 for no change, 1 for acceleration, -1 for deceleration
     gaps_list=[]
     vels_list=[]
-    
+    action_list=[]
     info_lists = [[] for _ in range(len(veh_id_list))]
 
     for i in range(len(veh_id_list)):
@@ -80,10 +81,12 @@ while t < simdur:
             controller=secrmController()
             action_=controller.get_accel(state[veh_id_list[i]])
             action[veh_id_list[i]] = [0,action_]
+        action_list.append(action_)
     print('actions',action)
     if len(veh_id_list)==3:
         gaps.append(gaps_list)
         speeds.append(vels_list)
+        actions.append(action_list)
 
     next_state_, reward_info, done, info = env.step(
         action, veh_id_list)
@@ -95,5 +98,6 @@ while t < simdur:
 
 np.save(f'results/speed_{controller_}.npy',speeds)
 np.save(f'results/gaps_{controller_}.npy',gaps)
+np.save(f'results/actions_{controller_}.npy',actions)
 
 env.close()
