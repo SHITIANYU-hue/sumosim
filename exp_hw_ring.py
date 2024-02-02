@@ -3,7 +3,11 @@ from argparse import ArgumentParser
 import traci
 import numpy as np
 import os
+from agents.ppo import PPO
+from agents.sac import SAC
+from agents.ddpg import DDPG
 import random
+import time
 from envs.synthetic_ring_env import sumo_env_ring
 import json
 from envs.add_veh import syn_ring_add_veh
@@ -29,13 +33,40 @@ parser.add_argument("--use_cuda", type=bool, default = True, help = 'cuda usage(
 parser.add_argument("--reward_scaling", type=float, default = 0.1, help = 'reward scaling(default : 0.1)')
 args = parser.parse_args()
 
+args = parser.parse_args()
+parser = ConfigParser()
+parser.read('config.ini')
+agent_args = Dict(parser,args.algo)
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+if args.use_cuda == False:
+    device = 'cpu'
+exp_tag='pporingplatoon'
+unix_timestamp = int(time.time())
 
-    
 env = sumo_env_ring()
 
+action_dim = 1
+state_dim = 4
+state_rms = RunningMeanStd(state_dim)
 
+if args.tensorboard:
+    from torch.utils.tensorboard import SummaryWriter
+    writer = SummaryWriter(f'score/{exp_tag}_{args.algo}_{unix_timestamp}')
+else:
+    writer = None
+if args.algo == 'ppo' :
+    agent = PPO(writer, device, state_dim, action_dim, agent_args)
+elif args.algo == 'sac' :
+    agent = SAC(writer, device, state_dim, action_dim, agent_args)
+elif args.algo == 'ddpg' :
+    from utils.noise import OUNoise
+    noise = OUNoise(action_dim,0)
+    agent = DDPG(writer, device, state_dim, action_dim, agent_args, noise)
 
+if args.load != 'no':
+    print('load',args.load)
+    agent.load_state_dict(torch.load("./model_weights/"+args.load))
 # for i in range(len(flow_rates)):
 state = env.reset(gui=args.render)
 action={}
@@ -48,7 +79,7 @@ simdur = args.horizon  # assuming args.horizon represents the total simulation d
 data=[]
 
 t=1
-controller_='secrm' # or idm
+controller_='secrmrl' # or idm
 veh_id_list=syn_ring_add_veh()
 gaps=[]
 speeds=[]
@@ -81,6 +112,14 @@ while t < simdur:
             controller=secrmController()
             action_=controller.get_accel(state[veh_id_list[i]])
             action[veh_id_list[i]] = [0,action_]
+        if controller_=='secrmrl':
+            controller=secrmController()
+            mu,sigma = agent.get_action(torch.from_numpy(state[veh_id_list[i]]).float().to(device))
+            dist = torch.distributions.Normal(mu,sigma[0])
+            action_s = dist.sample()
+            action_secrm=controller.get_accel(state[veh_id_list[i]])
+            action_=action_s.cpu().detach().numpy()
+            action[veh_id_list[i]] = [0,action_secrm+action_[0]]
         action_list.append(action_)
     print('actions',action)
     if len(veh_id_list)==3:
