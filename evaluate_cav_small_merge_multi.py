@@ -1,5 +1,6 @@
 from configparser import ConfigParser
 from argparse import ArgumentParser
+from agents.controller import *
 import traci
 import numpy as np
 import os
@@ -52,7 +53,7 @@ action={}
 
 
 mainlane_demand = 3300 ##5500, 4400,3850,3300
-merge_lane_demand = 0
+merge_lane_demand = 4000
 interval = 2000  # interval for calculating average statistics
 simdur = args.horizon  # assuming args.horizon represents the total simulation duration
 curflow = 0
@@ -73,7 +74,7 @@ densities = []
 data=[]
 
 t=1
-
+agent=coopsecrmController()
 while t < simdur:
     print('step', t)
     lane = 0
@@ -121,8 +122,8 @@ while t < simdur:
     t = t + 1
 
     for i in range(len(veh_id_list)):
-        action[veh_id_list[i]] = [1, 0]
-    
+        action[veh_id_list[i]] = agent.get_accel(veh_id_list[i])
+
     next_state_, reward_info, done, info = env.step(
         action, veh_id_list)
 
