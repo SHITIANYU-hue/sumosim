@@ -5,6 +5,26 @@ from scipy.spatial import distance
 def get_distance(a, b):
 	return distance.euclidean(a, b)
 
+def calculate_weighted_absolute_sum(list1, list2, lc_weight=2):
+    """
+    Calculate the sum of the absolute values of the elements of two lists,
+    applying a customizable weight (default is 1.2) to the first element of each list.
+    
+    Parameters:
+    - list1: First list of numbers.
+    - list2: Second list of numbers.
+    - lc_weight: Weight to apply to the first element of each list (default is 1.2).
+    
+    Returns:
+    - float: The sum of all elements in both lists with the specified weight applied to the first elements,
+             considering the absolute values of the elements.
+    """
+    # Apply the weight to the first element of each list and calculate the sum of absolute values
+    weighted_sum = (lc_weight * abs(list1[0]) + sum(abs(x) for x in list1[1:])) + \
+                   (lc_weight * abs(list2[0]) + sum(abs(x) for x in list2[1:]))
+    
+    return weighted_sum
+
 class IDMController:
     """Intelligent Driver Model (IDM) controller.
 
@@ -211,7 +231,9 @@ class coopsecrmController:
                  a=3,
                  eps=4,
                  tau=0.1,#reaction time
-                 sim_step=0.1):
+                 sim_step=0.1,
+                 p=0 ## p is the politeness factor
+                 ): 
         """Instantiate a secrm' controller."""
 
         self.v_desired = v0
@@ -221,6 +243,7 @@ class coopsecrmController:
         self.eps = eps
         self.tau = tau
         self.sim_step=sim_step
+        self.p = p
 
     def get_speed(self, info):
         """See parent class."""
@@ -241,11 +264,40 @@ class coopsecrmController:
         headway=get_distance(veh_pos,ego_pos)
         return headway
 
+    def get_delta_accel(self,name,new_follow):
+        """
+        input: vehicle name
+        output other controller's potential accelration change
+        """
+        follow_info=traci.vehicle.getFollower(name)[0]
+        # print('name',name,'new_follow',new_follow)
+        if new_follow!='' and  new_follow!=follow_info:
+            if type(new_follow)==tuple:
+                action_new_follow=self.get_accel(new_follow[0][0])
+            else:
+                action_new_follow=self.get_accel(new_follow)
+
+        else:
+            action_new_follow=[0,0]
+        if follow_info!='':
+            action_ego_follow=self.get_accel(follow_info)
+        else:
+            action_ego_follow=[0,0]
+        # print('name',name,'ego follow acc',action_ego_follow,'new follow acc',action_new_follow)
+
+        ## we consider both change left and right have same impact on the environment
+        if action_new_follow[0]!=0:
+            action_new_follow[0]=1
+        if action_ego_follow[0]!=0:
+            action_ego_follow[0]=1
+
+        return action_new_follow,action_ego_follow
+
+
     def get_accel(self,name):
         """
         input: vehicle name
         output controller's 2d action(rule based)
-        class.
         """
         action=[0,0]
         # this_vel,target_speed,headway,lead_vel=info
@@ -259,6 +311,7 @@ class coopsecrmController:
         follow_left=traci.vehicle.getNeighbors(name,'000')
         follow_right=traci.vehicle.getNeighbors(name,'001')
         lead_info=traci.vehicle.getLeader(name)
+        follow_info=traci.vehicle.getFollower(name)
 
         if lead_left is None or len(lead_left) == 0:  # no car ahead
             lead_id=0
@@ -295,14 +348,13 @@ class coopsecrmController:
         speed_e= self.get_speed(info_e)
         
         # print('headway',headway,'headwaye',headway_e,'headwayright',headway_right,'headwayleft',headway_left)
-        print('speed n',speed_n,'speed e',speed_e,'speed s',speed_s)
         change_right=traci.vehicle.couldChangeLane(name,-1)
         change_left=traci.vehicle.couldChangeLane(name,1)
 
         if speed_n>speed_e and speed_n >speed_s and change_left:
             action[0]=2 ## change left
         if speed_s>speed_e and speed_s > speed_n and change_right:
-            action[0]=1
+            action[0]=1 ## change right
         if abs(speed_n-speed_s)<100 and min(speed_n,speed_s)>speed_e:
             if change_right==True and change_left==False:
                 action[0]=1
@@ -313,12 +365,23 @@ class coopsecrmController:
 
         if action[0]==2:
             vnew=speed_n
+            new_follow=follow_left
         if action[0]==1:
             vnew=speed_s
+            new_follow=follow_right
         else:
             vnew=speed_e
-
+            new_follow=follow_info[0]
+        a,b=self.get_delta_accel(name,new_follow)
+        impact=calculate_weighted_absolute_sum(a,b)/5 ## 5 is because lc factor =2 , lc factor *1 + max acc(3)=5
         # v_next = min(v_acc, target_speed)
+
         action[1]=(vnew-this_vel)/self.sim_step
+
+        prob=np.random.uniform(0, 1)
+        if prob < self.p*impact:
+            action=[0,0]
+
+        # print('action',action)
         return action
 

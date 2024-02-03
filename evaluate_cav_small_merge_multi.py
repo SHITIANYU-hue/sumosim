@@ -19,8 +19,8 @@ parser.add_argument("--algo", type=str, default = 'ppo', help = 'algorithm to ad
 parser.add_argument('--train', type=bool, default=True, help="(default: True)")
 parser.add_argument('--render', type=bool, default=False, help="(default: False)")
 parser.add_argument('--manual', type=bool, default=False, help="(default: False)")
-parser.add_argument('--horizon', type=int, default=180000, help='number of simulation steps, (default: 6000)')
-parser.add_argument('--coop', type=float, default=0, help='cooperative factor for human vehicles')
+parser.add_argument('--horizon', type=int, default=18000, help='number of simulation steps, (default: 6000)')
+parser.add_argument('--p', type=float, default=0, help='politeness factor for human vehicles')
 parser.add_argument('--epochs', type=int, default=1, help='number of epochs, (default: 1000)')
 parser.add_argument('--tensorboard', type=bool, default=False, help='use_tensorboard, (default: False)')
 parser.add_argument("--load", type=str, default = 'no', help = 'load network name in ./model_weights')
@@ -74,7 +74,7 @@ densities = []
 data=[]
 
 t=1
-agent=coopsecrmController()
+agent=coopsecrmController(p=args.p)
 while t < simdur:
     print('step', t)
     lane = 0
