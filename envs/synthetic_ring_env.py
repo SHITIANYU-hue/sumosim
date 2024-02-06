@@ -3,7 +3,7 @@ import traci
 import sumolib
 import numpy as np
 from collections import deque
-from agents.controller import IDMController,GippsController
+from agents.controller import IDMController,GippsController,secrmController
 import os
 from utils.utils import *
 
@@ -240,22 +240,22 @@ class sumo_env_ring():
 			R_tot = R_comf + R_eff + R_safe
 
 		if reward_type=='secrm': ### need update
-			alpha_comf = 0.1
+			alpha_comf = 0.01
 			w_speed = 1
 			w_change = 0
 			w_eff = 1
 			w_safe=0
 			
-			this_vel,target_speed,headway,lead_vel,lead_info=self.get_ego_veh_info(name)
+			this_vel,target_speed,headway,lead_vel=self.get_ego_veh_info(name)
 			if this_vel<-5000:
 				this_vel=0
-			info=[this_vel,target_speed,headway,lead_vel,lead_info]
+			info=[this_vel,target_speed,headway,lead_vel]
 			# print('target speed',target_speed)
-			gipps_speed=GippsController().get_speed(info)
+			secrm_speed=secrmController().get_speed(info)
 			# target_speed= controller.get_speed(info)
 			# print('gipps speed',gipps_speed)
 			# or R_speed = -np.abs(this_vel - target_speed)
-			R_speed = -np.abs(this_vel - gipps_speed)
+			R_speed = -np.abs(this_vel - secrm_speed)
 			# print('R speed',R_speed)
 			if action[0]!=0:
 				R_change = -1
@@ -303,8 +303,8 @@ class sumo_env_ring():
 			lead_id=traci.vehicle.getLeader(name)[0]
 			headway = traci.vehicle.getLeader(name)[1]
 			lead_vel=traci.vehicle.getSpeed(lead_id)
-
-		return this_vel,target_speed,headway,lead_vel,lead_info
+		print('this vel',this_vel,'headway',headway,'target_speed',target_speed,'lead vel',lead_vel)
+		return np.array([this_vel,target_speed,headway,lead_vel])
 
 
 	def calculate_distance_veh(self,lead_info,ego_info):
@@ -330,7 +330,7 @@ class sumo_env_ring():
 		return [target_speed,lead_vel]
 
 	def compute_action(self,action,name,max_dec=-3,max_acc=3,stop_and_go=False,sumo_lc=False,sumo_carfollow=False,lane_change='SECRM',car_follow='Gipps'):
-		this_vel,target_speed,headway,lead_vel,lead_info=self.get_ego_veh_info(name)
+		this_vel,target_speed,headway,lead_vel=self.get_ego_veh_info(name)
 		# print('this vel',this_vel)
 		# print('action',action,'name',name)
 		# print('headway',headway)
