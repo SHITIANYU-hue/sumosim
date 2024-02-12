@@ -25,6 +25,14 @@ def calculate_weighted_absolute_sum(list1, list2, lc_weight=2):
     
     return weighted_sum
 
+def check_safe(Vego,VF_L,r=0.1,b_e=3,b_l_f=3,epsilon=0.1):
+    gap=VF_L*r+(VF_L**2)/(2*b_l_f)-(Vego**2)/(2*b_e)
+    # print('gap',gap)
+    if gap> epsilon:
+        return True
+    else:
+        return False
+
 class IDMController:
     """Intelligent Driver Model (IDM) controller.
 
@@ -270,15 +278,19 @@ class coopsecrmController:
         output other controller's potential accelration change
         """
         follow_info=traci.vehicle.getFollower(name)[0]
+        action_new_follow=[0,0]
         # print('name',name,'new_follow',new_follow)
         if new_follow!='' and  new_follow!=follow_info:
             if type(new_follow)==tuple:
-                action_new_follow=self.get_accel(new_follow[0][0])
+                action_ego_follow=[1,3]
+                try:
+                    action_new_follow=self.get_accel(new_follow[0][0])
+                except:
+                    action_ego_follow=[1,3] ## it will have collision!
             else:
                 action_new_follow=self.get_accel(new_follow)
 
-        else:
-            action_new_follow=[0,0]
+            
         if follow_info!='':
             action_ego_follow=self.get_accel(follow_info)
         else:
@@ -323,7 +335,11 @@ class coopsecrmController:
             headway_left=self.calculate_distance_veh(lead_id,name)
         info_n=[this_vel,target_speed,headway_left,lead_vel]
         speed_n= self.get_speed(info_n)
-
+        if follow_left is None or len(follow_left)==0:
+            safe_left=True
+        else:
+            safe_left=check_safe(this_vel,traci.vehicle.getSpeed(follow_left[0][0]))
+        # safe_left=True
         if lead_right is None or len(lead_right) == 0 :  # no car ahead
             lead_id=0
             lead_vel=target_speed
@@ -335,6 +351,10 @@ class coopsecrmController:
             headway_right=self.calculate_distance_veh(lead_id,name)
         info_s=[this_vel,target_speed,headway_right,lead_vel]
         speed_s= self.get_speed(info_s)
+        if follow_right is None or len(follow_right)==0:
+            safe_right=True
+        else:
+            safe_right=check_safe(this_vel,traci.vehicle.getSpeed(follow_right[0][0]))
 
         if lead_info is None or lead_info == '' or lead_info[1]>30:  # no car ahead
             lead_id=0
@@ -348,9 +368,10 @@ class coopsecrmController:
         speed_e= self.get_speed(info_e)
         
         # print('headway',headway,'headwaye',headway_e,'headwayright',headway_right,'headwayleft',headway_left)
-        change_right=traci.vehicle.couldChangeLane(name,-1)
-        change_left=traci.vehicle.couldChangeLane(name,1)
 
+        change_right=traci.vehicle.couldChangeLane(name,-1) and safe_right
+        change_left=traci.vehicle.couldChangeLane(name,1) and safe_left
+        # print('safe left',safe_left,'safe right',safe_right,'changeleft',change_left)
         if speed_n>speed_e and speed_n >speed_s and change_left:
             action[0]=2 ## change left
         if speed_s>speed_e and speed_s > speed_n and change_right:
@@ -379,7 +400,7 @@ class coopsecrmController:
         action[1]=(vnew-this_vel)/self.sim_step
 
         prob=np.random.uniform(0, 1)
-        if prob < self.p*impact:
+        if prob < self.p*impact: #(impact 0.2,0.3,0.5,1,2,5)
             action=[0,0]
 
         # print('action',action)
