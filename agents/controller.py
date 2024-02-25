@@ -25,6 +25,26 @@ def calculate_weighted_absolute_sum(list1, list2, lc_weight=2):
     
     return weighted_sum
 
+def calculate_weighted_sum(list1, list2, lc_weight=0):
+    """
+    Calculate the sum of the absolute values of the elements of two lists,
+    applying a customizable weight (default is 1.2) to the first element of each list.
+    
+    Parameters:
+    - list1: First list of numbers.
+    - list2: Second list of numbers.
+    - lc_weight: Weight to apply to the first element of each list (default is 1.2).
+    
+    Returns:
+    - float: The sum of all elements in both lists with the specified weight applied to the first elements,
+             considering the absolute values of the elements.
+    """
+    # Apply the weight to the first element of each list and calculate the sum of absolute values
+    weighted_sum = (sum((x) for x in list1[1:])) + \
+                   (sum((x) for x in list2[1:]))
+    
+    return weighted_sum
+
 def check_safe(Vego,VF_L,r=0.1,b_e=3,b_l_f=3,epsilon=0.1):
     gap=VF_L*r+(VF_L**2)/(2*b_l_f)-(Vego**2)/(2*b_e)
     # print('gap',gap)
@@ -394,7 +414,8 @@ class coopsecrmController:
             vnew=speed_e
             new_follow=follow_info[0]
         a,b=self.get_delta_accel(name,new_follow)
-        impact=calculate_weighted_absolute_sum(a,b)/5 ## 5 is because lc factor =2 , lc factor *1 + max acc(3)=5
+        # impact=calculate_weighted_absolute_sum(a,b)/5 ## 5 is because lc factor =2 , lc factor *1 + max acc(3)=5
+        impact=(calculate_weighted_sum(a,b)+3)/6
         # v_next = min(v_acc, target_speed)
 
         action[1]=(vnew-this_vel)/self.sim_step
