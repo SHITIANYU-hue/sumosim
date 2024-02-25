@@ -21,7 +21,7 @@ parser.add_argument("--algo", type=str, default = 'ppo', help = 'algorithm to ad
 parser.add_argument('--train', type=bool, default=True, help="(default: True)")
 parser.add_argument('--render', type=bool, default=False, help="(default: False)")
 parser.add_argument('--manual', type=bool, default=False, help="(default: False)")
-parser.add_argument('--horizon', type=int, default=18000*0.01, help='number of simulation steps, (default: 6000)')
+parser.add_argument('--horizon', type=int, default=18000*0.5, help='number of simulation steps, (default: 6000)')
 parser.add_argument('--coop', type=float, default=0, help='cooperative factor for human vehicles')
 parser.add_argument('--epochs', type=int, default=50, help='number of epochs, (default: 1000)')
 parser.add_argument('--tensorboard', type=bool, default=False, help='use_tensorboard, (default: False)')
@@ -122,10 +122,10 @@ if agent_args.on_policy == True:
     score_comfort=0
     score_eff=0
     score_safe=0
-    states = env.reset(gui=args.render)
     action={}
         # state = np.clip((state_ - state_rms.mean) / (state_rms.var ** 0.5 + 1e-8), -5, 5)
     for n_epi in range(args.epochs):
+        states = env.reset(gui=args.render)
         t=1
         print('epoch',n_epi)
         while t < simdur:
@@ -251,7 +251,7 @@ if agent_args.on_policy == True:
         print('total travel time (h):',total_travel_time)
         print('average bottleneck speed:',np.mean(avg_speeds))
         print('average emission: ','CO:',np.mean(cos),'HC:',np.mean(hcs),'NOX:',np.mean(noxs),'PMX:',np.mean(pmxs))
-        # env.close()
+        env.close()
 
 
 
