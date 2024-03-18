@@ -3,7 +3,7 @@ import traci
 import sumolib
 import numpy as np
 from collections import deque
-from agents.controller import IDMController,GippsController
+from agents.controller import IDMController,GippsController,secrmController
 import os
 from utils.utils import *
 
@@ -150,7 +150,6 @@ class sumo_env_merge():
 
 	def detect_collision(self,name):
 		collisions = traci.simulation.getCollidingVehiclesIDList()
-		# print('collision name',collisions)
 		if name in collisions:
 			self.collision = True
 			return True
@@ -249,9 +248,9 @@ class sumo_env_merge():
 			this_vel,lead_vel,lead_info,headway,target_speed=self.get_ego_veh_info(name)
 			if this_vel<-5000:
 				this_vel=0
-			info=[target_speed,lead_vel,headway,this_vel]
+			info=[this_vel,target_speed,headway,lead_vel]
 			# print('target speed',target_speed)
-			gipps_speed=GippsController().get_speed(info)
+			gipps_speed=secrmController().get_speed(info)
 			# target_speed= controller.get_speed(info)
 			# print('gipps speed',gipps_speed)
 			# or R_speed = -np.abs(this_vel - target_speed)
@@ -262,7 +261,7 @@ class sumo_env_merge():
 			else:
 				R_change = 0
 			# Eff
-			R_eff = w_eff*(w_speed*R_speed + w_change*R_change) ## i didn't add R_lane rihgt not since it is not mandatory lane change
+			R_eff = w_eff*(w_speed*R_speed + w_change*R_change) ## i didn't add R_lane rihgt now since it is not mandatory lane change
 
 			if collision:
 				R_safe = -10
@@ -296,6 +295,7 @@ class sumo_env_merge():
 		trail_info = traci.vehicle.getFollower(name)
 		this_vel=traci.vehicle.getSpeed(name)
 		target_speed=traci.vehicle.getAllowedSpeed(name)
+		target_speed=30
 
 		if lead_info is None or lead_info == '' or lead_info[1]>5:  # no car ahead??
 			s_star=0
@@ -336,11 +336,11 @@ class sumo_env_merge():
 		# print('this vel',this_vel)
 		# print('action',action,'name',name)
 		# print('headway',headway)
-		if headway <10 and this_vel>lead_vel:
-			action[1]=-3
+
 		# action[0]=map_action(action[0])
 
 		# action[1]=max(max_dec, min(action[1], max_acc))
+
 		parts=self.curr_lane.split("_")
 		if len(parts)>=2:
 			edge="_".join(parts[0:2])
@@ -350,18 +350,20 @@ class sumo_env_merge():
 
 		if action[0] != 0:
 			if action[0] == 1: ## change to right 
-				if self.curr_sublane >=1 :
-					try:
-						traci.vehicle.changeLane(name, self.curr_sublane-1, 0.1)
-					except:
-						pass
+				# if self.curr_sublane >=1 :
+				# 	try:
+				# 		traci.vehicle.changeLane(name, self.curr_sublane-1, 0.1)
+				# 	except:
+				# 		pass
+				traci.vehicle.changeLaneRelative(name, -1,1)
 
 			if action[0] == 2: ## change to left
-				if self.curr_sublane < num_lanes-1:
-					try:
-						traci.vehicle.changeLane(name, self.curr_sublane + 1, 0.1)
-					except:
-						pass
+				# if self.curr_sublane < num_lanes-1:
+				# 	try:
+				# 		traci.vehicle.changeLane(name, self.curr_sublane + 1, 0.1)
+				# 	except:
+				# 		pass
+				traci.vehicle.changeLaneRelative(name, 1, 1)
 
 		self.apply_acceleration(name,action[1])
 
