@@ -349,7 +349,8 @@ class sumo_env_merge():
 		num_lanes = traci.edge.getLaneNumber(edge)
 
 		if action[0] != 0:
-			if action[0] == 1: ## change to right 
+			if action[0] == 1 and parts[0]!='276' and parts[1]!='1': ## change to right (not allow to change right to merge lane)
+
 				# if self.curr_sublane >=1 :
 				# 	try:
 				# 		traci.vehicle.changeLane(name, self.curr_sublane-1, 0.1)
