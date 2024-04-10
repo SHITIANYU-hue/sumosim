@@ -92,8 +92,8 @@ outID_994=['994_0loop']
 
 
 
-mainlane_demand = 0.5*3600 ##5500, 4400,3850,3300
-merge_lane_demand = 0
+mainlane_demand = 0.6*5500 ##5500, 4400,3850,3300
+merge_lane_demand = 0.5*1500
 interval = 2000*0.1  # interval for calculating average statistics
 simdur = args.horizon  # assuming args.horizon represents the total simulation duration
 curflow = 0
@@ -116,6 +116,7 @@ total_travel_time=0
 densities = []
 data=[]
 warmup=100
+coop=1
 
 if agent_args.on_policy == True:
     score = 0.0
@@ -129,12 +130,12 @@ if agent_args.on_policy == True:
         t=1
         print('epoch',n_epi)
         while t < simdur:
-            print('step', t)
+            # print('step', t)
             try:
                 veh_id_list=syn_merge_add_veh(t,mainlane_demand,merge_lane_demand) ## it could be possible multiple vehicles are reapeated added
             except:
                 pass
-            print('veh id list!',veh_id_list)
+            # print('veh id list!',veh_id_list)
             vehPermid = get_vehicle_number('276_0') + get_vehicle_number('276_1') + get_vehicle_number('276_2')
             vehPerout = get_vehicle_number('250_0') + get_vehicle_number('250_1') 
 
@@ -145,7 +146,7 @@ if agent_args.on_policy == True:
             total_travel_time = total_travel_time+ (time_step*veh_number_total)/3600
 
             avg_speed=(get_meanspeed('276_0')+get_meanspeed('276_1')+get_meanspeed('276_2'))/3 ### this is only bottlneck's speed
-            print('avg speed',avg_speed)
+            # print('avg speed',avg_speed)
 
             curdensity += vehPermid / traci.lane.getLength('276_0')
             # print('curflow',curflow,'cudensity',curdensity)
@@ -186,11 +187,25 @@ if agent_args.on_policy == True:
                     action_=action.cpu().detach().numpy()
                     actions[veh_id]=action_
                     log_prob = dist.log_prob(action).sum(-1,keepdim = True)
-                next_states, reward_info, done, info = env.step(actions,veh_id_list)
-                print('reward!',reward_info)
+                next_grid_state,next_states, reward_info, done, info = env.step(actions,veh_id_list)
+                # print('reward!',reward_info)
+                # print('grid state',next_grid_state)
 
                 for veh_id in veh_id_list:
+
+                    veh_neigh_ids= np.array(next_grid_state[veh_id]).flatten()
+                    veh_neigh_ids= veh_neigh_ids[(veh_neigh_ids!=0) & (veh_neigh_ids!=-1)]
+
                     Reward=reward_info[veh_id]
+
+                    if len(veh_neigh_ids)!=0:
+                        for id in veh_neigh_ids:
+                            try:
+                                Reward=np.array(Reward)+ coop*np.array(reward_info[id])
+                            except:
+                                # print('id',id)
+                                Reward=np.array(Reward)+np.array([0,0,0,0]) ## this might happen if the vehicle's reward is not measured
+                            # print('reward update',Reward)
                     if len(reward_info)==0:
                         reward, R_comf, R_eff, R_safe=0,0,0,0
                     else:
@@ -209,6 +224,8 @@ if agent_args.on_policy == True:
                     score_comfort +=R_comf
                     score_eff += R_eff
                     score_safe +=R_safe
+                    print('comfort:',score_comfort,'eff:',score_eff,'safe:',score_safe)
+
                 if done:
                         # state = np.clip((state_ - state_rms.mean) / (state_rms.var ** 0.5 + 1e-8), -5, 5)
                         score_lst.append(score)
@@ -326,7 +343,6 @@ else : # off policy
             score_comfort +=R_comf
             score_eff += R_eff
             score_safe +=R_safe
-
 
             if agent.data.data_idx > agent_args.learn_start_size: 
                 agent.train_net(agent_args.batch_size, n_epi)
