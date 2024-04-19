@@ -235,6 +235,46 @@ class secrmController:
 
         return vnew
     
+    def calculate_distance_veh(self,lead_info,ego_info):
+        veh_pos = traci.vehicle.getPosition(lead_info)
+        ego_pos = traci.vehicle.getPosition(ego_info)
+        headway=get_distance(veh_pos,ego_pos)
+        return headway
+
+    def get_2d_speed(self, info, name):
+        """See parent class."""
+        this_vel,target_speed,headway,lead_vel=info
+        lead_left= traci.vehicle.getNeighbors(name,'010')
+        lead_right=traci.vehicle.getNeighbors(name,'011')
+        lead_info=traci.vehicle.getLeader(name)
+        this_vel=traci.vehicle.getSpeed(name)
+        headway=9999
+        if lead_left is None or len(lead_left) == 0:  # no car ahead
+            lead_id=0
+            lead_vel=target_speed
+            headway_left=headway
+        else:
+            lead_id=lead_left[0][0]
+            lead_vel=traci.vehicle.getSpeed(lead_id)
+            headway_left=self.calculate_distance_veh(lead_id,name)
+        info_n=[target_speed,lead_vel,headway_left,this_vel]
+        speed_n= self.get_speed(info_n)
+
+        if lead_right is None or len(lead_right) == 0 :  # no car ahead
+            lead_id=0
+            lead_vel=target_speed
+            headway_right=headway
+        else:
+            lead_id=lead_right[0][0]
+            lead_vel=traci.vehicle.getSpeed(lead_id)
+            headway_right=self.calculate_distance_veh(lead_id,name)
+        info_s=[target_speed,lead_vel,headway_right,this_vel]
+        speed_s= self.get_speed(info_s)
+
+        # v_next = min(v_acc, target_speed)
+
+        return [speed_n,speed_s]
+    
 
     def get_accel(self, info):
         """See parent class."""
