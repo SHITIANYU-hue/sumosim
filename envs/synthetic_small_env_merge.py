@@ -29,6 +29,7 @@ class sumo_env_merge():
 		self.lane_ids = []
 		self.rl_names = []
 		self.rl_vehicles_state = {}
+		self.rl_vehicles_grid_state={}
 		self.rewards={}
 		self.rl_vehicles_action={}
 		self.max_steps = 6000
@@ -239,22 +240,50 @@ class sumo_env_merge():
 			R_tot = R_comf + R_eff + R_safe
 
 		if reward_type=='secrm':
-			alpha_comf = 0.1
+			alpha_comf = 1
 			w_speed = 1
 			w_change = 0
 			w_eff = 1
 			w_safe=0
-			
+			ae=3
+			de=5
+			tau=0.1
+			gamma=0.99
+
 			this_vel,lead_vel,lead_info,headway,target_speed=self.get_ego_veh_info(name)
 			if this_vel<-5000:
 				this_vel=0
+
+			this_vel=traci.vehicle.getSpeed(name)
+
 			info=[this_vel,target_speed,headway,lead_vel]
 			# print('target speed',target_speed)
-			gipps_speed=secrmController().get_speed(info)
+			secrm_speed=secrmController().get_speed(info)
+			secrm_2dspeed=secrmController().get_2d_speed(info,name)
+			if max(secrm_2dspeed)>secrm_speed:
+				max_speed=max(secrm_2dspeed)
+				T=int((abs(max_speed-this_vel)/ae)*(1/tau))
+				cost=(1-gamma**T)/(1-gamma)
+				R_disc=cost*(this_vel-max_speed)/max_speed
+			else:
+				R_disc=0
+
+			distance2=abs(traci.vehicle.getDrivingDistance(name,'276',0))
+			sublane=self.curr_lane.split("_")[-1]
+			if distance2<300:
+				exit_dis=distance2
+			else:
+				exit_dis=0
+			R_exit=0
+			if sublane=='0':
+				R_exit=-1/(1+0.01*exit_dis)
 			# target_speed= controller.get_speed(info)
 			# print('gipps speed',gipps_speed)
 			# or R_speed = -np.abs(this_vel - target_speed)
-			R_speed = -np.abs(this_vel - gipps_speed)
+   
+
+
+			R_speed = -np.abs(this_vel - secrm_speed)/secrm_speed
 			# print('R speed',R_speed)
 			if action[0]!=0:
 				R_change = -1
@@ -270,12 +299,13 @@ class sumo_env_merge():
 
 			R_safe=w_safe*R_safe
 			jerk = self.compute_jerk()
-			R_comf = -alpha_comf*jerk**2
+			R_comf = -alpha_comf*(jerk/(ae+de))**2
 			# print('r safe',R_safe,'r eff',R_eff,'r comfort', R_comf)
 			R_tot = R_comf + R_eff + R_safe
 			# print('R total',R_tot)
+			# print('Rcomf',R_comf,'Reff',R_eff,'Rdisc',R_disc,'R_exit',R_exit)
 
-		return [R_tot, R_comf, R_eff, R_safe]
+		return [R_tot, R_comf, R_eff, R_disc,R_exit]
 		
 
 	def apply_acceleration(self, vid, acc, smooth=True):
@@ -356,7 +386,8 @@ class sumo_env_merge():
 				# 		traci.vehicle.changeLane(name, self.curr_sublane-1, 0.1)
 				# 	except:
 				# 		pass
-				traci.vehicle.changeLaneRelative(name, -1,1)
+				pass
+				# traci.vehicle.changeLaneRelative(name, -1,1)
 
 			if action[0] == 2: ## change to left
 				# if self.curr_sublane < num_lanes-1:
@@ -418,17 +449,19 @@ class sumo_env_merge():
 		next_state=[]
 		for i in range(len(veh_id_list)):
 			next_state = self.get_state(veh_id_list[i]) ##length is 65
+			self.rl_vehicles_grid_state[veh_id_list[i]]=self.get_grid_state(veh_id_list[i])
 			self.rl_vehicles_state[veh_id_list[i]]=next_state
 		# Update curr state
 		self.curr_step += 1
 		next_state=self.rl_vehicles_state
+		next_grid_state=self.rl_vehicles_grid_state
 		if self.curr_step <= self.max_steps:
 			done = collision
 		else:
 			done = True
 			self.curr_step = 0
 
-		return next_state, self.rewards, done, collision
+		return next_grid_state,next_state, self.rewards, done, collision
 		
 	def render(self, mode='human', close=False):
 		pass
