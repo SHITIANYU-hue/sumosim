@@ -16,14 +16,17 @@ parser = ArgumentParser('parameters')
 parser.add_argument("--horizon", type=int, default=50000, help='number of simulation steps, (default: 6000)')
 parser.add_argument('--render', type=bool, default=False, help="(default: False)")
 parser.add_argument('--exp_tag', type=str, default="default_exp", help="Experiment tag for saving checkpoint files")
-parser.add_argument('--use_random_demand', type=bool, default=True, help="Whether to use random demand values or fixed values (default: True)")
-
+parser.add_argument('--use_random_demand', type=bool, default=False, help="Whether to use random demand values or fixed values (default: True)")
+parser.add_argument('--eval', action='store_true', help="Whether to run evaluation (default: False)")
+parser.add_argument('--checkpoint', type=str, default="", help="Path to the checkpoint to be loaded for evaluation")
 
 args = parser.parse_args()
 outID_250=['250_0loop','250_1loop']
 outID_246=['246_1loop']
 outID_319=['319_0loop','319_1loop']
 outID_248= ['248_1loop'] ##248_1loop
+
+
 
 class CustomSUMOEnv:
     def __init__(self, gui=False, warm_up_step=100,state_dim=4, 
@@ -169,6 +172,14 @@ class DDPGAgent:
             'critic_optimizer_state_dict': self.critic_optimizer.state_dict()
         }
         torch.save(checkpoint, filepath)
+        
+    def load_checkpoint(self, filepath):
+        checkpoint = torch.load(filepath)
+        self.actor.load_state_dict(checkpoint['actor_state_dict'])
+        self.critic.load_state_dict(checkpoint['critic_state_dict'])
+        self.actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
+        self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
+        print(f"Checkpoint loaded from {filepath}")
 
 # 获取状态信息
 def get_state():
@@ -183,7 +194,7 @@ def get_state():
 # 设置速度限制
 def set_speed_limit(action,speed_limit=25):
     action=np.absolute(action)
-    # print('action',action)
+    print('action',action)
     traci.edge.setMaxSpeed("319", speed_limit*action[0])
     traci.edge.setMaxSpeed("246", speed_limit*action[1])
     traci.edge.setMaxSpeed("994", speed_limit*action[2])
@@ -204,9 +215,13 @@ def calculate_reward():
     outflow = calc_outflow(outID_250)/2000
     rampflow = calc_outflow(outID_248)/2000
     collisions = len(traci.simulation.getCollidingVehiclesIDList())
-    # print('rampflow',rampflow,'outflow',outflow,'collision',collisions)
+    print('rampflow',rampflow,'outflow',outflow,'collision',collisions)
     reward = rampflow + outflow - 100*collisions
     return reward
+
+
+
+
 
 # 初始化自定义环境和智能体
 state_dim = 5
@@ -220,59 +235,115 @@ mainlane_demands = [165, 330, 440, 495, 550]
 merge_lane_demands = [150, 90]
 mainlane_demand = random.choice(mainlane_demands)
 merge_lane_demand = random.choice(merge_lane_demands)
-control_type='headway' ## or speed
+control_type='speed' ## or speed
 # 训练循环
 episodes = 200
 checkpoint_dir = "/home/tianyu/code/uoftexp/sumosim/video_data/1031"
 warmup=1000
-for episode in range(episodes):
-    state = env.reset(gui=args.render)  # 每个 episode 重置环境
-    episode_reward = 0
-    t = 1
 
-    while t < args.horizon:
-        # print('t',t)
-        # 每过10000步，随机选择新的流量需求
-        if t % 10000 == 0:
-            if args.use_random_demand:
-                mainlane_demand = random.choice(mainlane_demands)
-                merge_lane_demand = random.choice(merge_lane_demands)
-            else:
-                mainlane_demand = 550
-                merge_lane_demand = 150
-            print(f"Step {t}: New mainlane demand: {mainlane_demand}, New merge lane demand: {merge_lane_demand}")
-        
-        veh_id_list = syn_merge_add_veh_constant(t, mainlane_demand, merge_lane_demand)  # 添加车辆
-        traci.simulationStep()  # 前进仿真
-        if t > warmup:
-            action = agent.select_action(state)
-            if control_type=='speed':
-                set_speed_limit(action)
-            if control_type=='headway':
-                set_time_headway(action)
+# 如果是评估模式，加载模型检查点
+if args.eval and args.checkpoint:
+    agent = DDPGAgent(state_dim, action_dim, max_action)  # Ensure the agent is defined before loading
+    agent.load_checkpoint(args.checkpoint)
+    agent.actor.eval()
+    agent.critic.eval()
+    print(f"Loaded checkpoint from {args.checkpoint}")
 
-            next_state = get_state()
-            # print('state',next_state)
-            reward = calculate_reward()
-            # print('reward',reward)
-            done = False  # 定义结束条件
+if args.eval:
+    # Evaluation Phase
+    episodes = 1  # Number of evaluation episodes
+    for episode in range(episodes):
+        state = env.reset(gui=args.render)
+        episode_reward = 0
+        t = 1
 
-            agent.add_to_replay_buffer(state, action, reward, next_state, done)
-            agent.train(batch_size=64)
+        # Set initial demands (either random or fixed)
+        if args.use_random_demand:
+            mainlane_demand = random.choice(mainlane_demands)
+            merge_lane_demand = random.choice(merge_lane_demands)
+        else:
+            mainlane_demand = 165
+            merge_lane_demand = 150
 
-            state = next_state
-            episode_reward += reward
+        while t < args.horizon:
+            if t % 10000 == 0:
+                # Update traffic demands periodically during evaluation
+                if args.use_random_demand:
+                    mainlane_demand = random.choice(mainlane_demands)
+                    merge_lane_demand = random.choice(merge_lane_demands)
+                print(f"Step {t}: New mainlane demand: {mainlane_demand}, New merge lane demand: {merge_lane_demand}")
 
-            if done:
-                break
-        t += 1
+            # Add vehicles at each time step
+            veh_id_list = syn_merge_add_veh_constant(t, mainlane_demand, merge_lane_demand)
+            traci.simulationStep()  # Step simulation forward
 
-    print(f"Episode {episode + 1}: Total Reward: {episode_reward}")
+            if t > 1000:  # Warmup period to allow the environment to stabilize
+                action = agent.select_action(state)
+                if control_type == 'speed':
+                    set_speed_limit(action)
+                elif control_type == 'headway':
+                    set_time_headway(action)
 
-    ## 每隔10个episode保存一次模型检查点
-    if (episode + 1) % 10 == 0:
-        checkpoint_path = os.path.join(checkpoint_dir, f"{args.exp_tag}_checkpoint_episode_{episode + 1}.pth")
-        agent.save_checkpoint(checkpoint_path)
-        print(f"Checkpoint saved at episode {episode + 1}")
+                next_state = get_state()
+                reward = calculate_reward()
 
-    traci.close()
+                state = next_state
+                episode_reward += reward
+
+            t += 1
+
+        print(f"[Evaluation] Episode {episode + 1}: Total Reward: {episode_reward}")
+        traci.close()
+
+else:
+    # Training Phase
+    episodes = 200
+    warmup = 1000
+
+    for episode in range(episodes):
+        state = env.reset(gui=args.render)  # 每个 episode 重置环境
+        episode_reward = 0
+        t = 1
+
+        while t < args.horizon:
+            if t % 10000 == 0:
+                if args.use_random_demand:
+                    mainlane_demand = random.choice(mainlane_demands)
+                    merge_lane_demand = random.choice(merge_lane_demands)
+                else:
+                    mainlane_demand = 550
+                    merge_lane_demand = 150
+                print(f"Step {t}: New mainlane demand: {mainlane_demand}, New merge lane demand: {merge_lane_demand}")
+
+            veh_id_list = syn_merge_add_veh_constant(t, mainlane_demand, merge_lane_demand)  # 添加车辆
+            traci.simulationStep()  # 前进仿真
+            if t > warmup:
+                action = agent.select_action(state)
+                if control_type == 'speed':
+                    set_speed_limit(action)
+                elif control_type == 'headway':
+                    set_time_headway(action)
+
+                next_state = get_state()
+                reward = calculate_reward()
+                done = False  # 定义结束条件
+
+                agent.add_to_replay_buffer(state, action, reward, next_state, done)
+                agent.train(batch_size=64)
+
+                state = next_state
+                episode_reward += reward
+
+                if done:
+                    break
+            t += 1
+
+        print(f"Episode {episode + 1}: Total Reward: {episode_reward}")
+
+        ## 每隔10个episode保存一次模型检查点
+        if (episode + 1) % 10 == 0:
+            checkpoint_path = os.path.join(checkpoint_dir, f"{args.exp_tag}_checkpoint_episode_{episode + 1}.pth")
+            agent.save_checkpoint(checkpoint_path)
+            print(f"Checkpoint saved at episode {episode + 1}")
+
+        traci.close()
