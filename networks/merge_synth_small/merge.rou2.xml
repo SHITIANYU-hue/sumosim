@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on Thu 04 Jan 2024 10:01:48 AM by Eclipse SUMO netedit Version v1_8_0+1878-9c33583f10
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="Omar_VSL_Shifted_Demand.net.xml"/>
+    </input>
+
+    <output>
+        <output-file value="Omar_VSL_Shifted_Demand.net.xml"/>
+    </output>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="false"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="0"/>
+        <junctions.limit-turn-speed value="-1"/>
+        <rectangular-lane-cut value="false"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="false"/>
+    </pedestrian>
+
+    <netedit>
+        <route-files value="/home/ilia/Programming/sow45_code/wolf/networks/sumo/single_ramp_hypothetical_network/Omar_VSL_Shifted_Demand.rou.xml"/>
+    </netedit>
+
+    <report>
+        <aggregate-warnings value="5"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <!-- <route edges="328 319 246 276 250" color="yellow" id="route_0"/>
+    <route edges="1249 994 248 276 250" color="yellow" id="route_1"/> -->
+    <route edges="328 319 246 276 250 " color="yellow" id="route_0"/>
+    <route edges="1249 994 248 276 250" color="yellow" id="route_1"/>
+    <vType id="human" accel="0.8" decel="10.5" sigma="0.5" length="5" carFollowModel="IDM" maxSpeed="30" speedFactor="1" speedDev="0.3" lcCooperative="1" lcStrategic="1" lcPushy= '0' minGap="2" tau="1" laneChangeModel="SL2015" guiShape='passenger/wagon' color='0,1,0'/> 
+    <vType id="rl" accel="0.8" decel="10.5" sigma="0.5" length="5" maxSpeed="50" lcCooperative="0" carFollowModel="IDM" minGap="0" laneChangeModel="SL2015" tau="1" guiShape='passenger/van' color="1,0,0"/>
+    <vType id="rl2" accel="3" decel="4.5" sigma="0.5" length="5" maxSpeed="30"  minGap="0" lcAccelLat="10.0" lcAssertive="100.0"  lcPushy="1.0" lcPushyGap="0.0" minGapLat="1" maxSpeedLat="2.0" guiShape='passenger/sedan' lcCooperative="0.0" lcStrategic="0" color="1,0,0"/>
+
+    <!-- Flow for Route 0 -->
+    <!-- <flow id="flow0" type="rl" route="route_0" begin="0" end="36000" vehsPerHour="5500" departSpeed="max" departLane="best" color="0,1,0"/> -->
+    <!-- Flow for Route 1 -->
+    <!-- <flow id="flow1" type="human" route="route_1" begin="0" end="36000" vehsPerHour="1500" departSpeed="max" departLane="best" color="1,0,0"/> -->
+
+</routes>
