@@ -60,5 +60,8 @@
 
 	<inductionLoop id='248_1loop' lane='248_0' pos='650' period='200' file='data/resultsOfDetectors.xml'/>
 
+	<inductionLoop id='1249_0loop' lane='1249_0' pos='80' period='200' file='data/resultsOfDetectors.xml'/>
+
+
 </additional>
 
